@@ -36,16 +36,33 @@ Além disso esse documento é um estudo para um projeto pessoal, e podem fazer r
 
 É focado principalmente na criação de um servidor de autenticação, porém as anotações são para interação com o servidor, não entrando em especificações de como um servidor OP deva funcionar, tornando por base que o `node oidc-provider` já tem em sua implementação as validações e regras no lado do servidor.
 
-OBS: muitas vezes é usado a sigla **IdP** para referir-se ao servidor de autenticação (Authorization Server, Identity Provider ou IdP, OpenID Provider ou OP), ou seja, o lugar onde está sendo executado o node oidc-provider.
+> OBS: muitas vezes é usado a sigla **IdP** para referir-se ao servidor de autenticação (Authorization Server, Identity Provider ou IdP, OpenID Provider ou OP), ou seja, o lugar onde está sendo executado o node oidc-provider.
 
 ### Leia a documentação Oficial
 
-- [OpenID Core 1.0](https://openid.net/specs/openid-connect-core-1_0.html)
 - [RFC6749 - OAuth 2.0 Authorization Framework](https://tools.ietf.org/html/rfc6749)
 - [RFC6750 - Bearer Token Usage](https://tools.ietf.org/html/rfc6750)
-- [RFC7515 - JWS](https://tools.ietf.org/html/draft-ietf-jose-json-web-signature-41)
+- [OpenID Core 1.0](https://openid.net/specs/openid-connect-core-1_0.html)
 - [node oidc-provider](https://github.com/panva/node-oidc-provider)
 - [node openid-client](https://www.npmjs.com/package/openid-client)
+- [RFC7515 - JWS](https://tools.ietf.org/html/draft-ietf-jose-json-web-signature-41)
+
+### Conceitos
+
+- **Identity** (ou Identidade) é um conjunto de atributos relacionados à uma entidade (ISO29115). No mundo real a entidade *pessoa* pode ter várias identidades: Pai, Funcionário, Marido...  
+- Uma camada de Identidade provê (5W1H):
+  - **Who:** quem é o usuário autenticado
+  - **Where:** onde ele está autenticado
+  - **When:** quando ele se autenticou
+  - **How:** como se autenticou
+  - **What:** quais atributos ele pode oferecer
+  - **Why:** porquê ele está oferecendo
+- OpenID = **autenticação** (certifica que você é você)
+- OAuth 2.0 = **autorização** (certifica que você acesse só o que você tem permissão)trantra
+
+#### Requisitos para entendimento
+
+- JWT (Header, Payload, Signature)
 
 # OpenID Connect
 
@@ -199,7 +216,47 @@ Esta é base principal do OpenID, dos fluxos de autenticação.
 |10|acr|Se o `acr` foi informado na requisição, deve-se checar se o valor é apropriado.|
 |11|auth_time|Se o `auth_time` foi informado na requisição, ou o `max_age` então esta claim deve ser validada.<br>Deve ser solicitada uma nova autenticação se muito tempo se passou desde a última autenticação do usuário.|
 
+### JWT, JWE, JWS e JWTs aninhados
+
+#### JWT
+
+[RFC7519](https://tools.ietf.org/html/rfc7519) O resultado de 3 JSONs codificados em base64: `Cabeçalho.Corpo.Assinatura`.  
+_Note que após a decodificação do JWT usando o base64, todo seu conteúdo se torna público._
+
+#### JWS
+
+[RFC7515](https://tools.ietf.org/html/rfc7515) O JWS é um JWT com assinatura (o mesmo que acima). Dessa forma é possível verificar que um Corpo (_payload_) não foi alterado após sua geração.  
+_Obrigatório no OpenID!_
+
+#### JWE
+
+[RFC7516](https://tools.ietf.org/html/rfc7516) Diferente dos dois acimas, o JWE é um JWT que possui seus dados criptografados. Ou seja, não é possível ver seu conteúdo facilmente, sem o uso de uma chave.  
+Segue o padrão: `Cabeçalho.Chave.Vetor.Corpo.Marca`.  
+_Opcional no OpenID_
+
+#### JWT aninhado
+
+Ou _Nested JWT_ é um JWT dentro do outro. No OpenID geramos um JWS (o token com o payload e assinado) e então colocamos esse token dentro de outro JWT, mas criptografado, gerando um JWE.
+
+![JWT aninhado (padrão JWS em JWE)](https://miro.medium.com/max/700/1*SuPjAL5ZN4Us1mbpZ8hGAw.png)  
+_JWT aninhado (padrão JWS em JWE)_
+
 ## Claims
+
+Os JWTs do OpenID contém várias _claims_ (reivindicações/direitos).  
+Alguns são padrões e estão definidos na [RFC7519](https://tools.ietf.org/html/rfc7519).
+
+### Atributos padrão
+
+|Membro|Tipo|Descrição
+|---|---|---|
+|aud|texto ou lista|Deve conter pelo menos o `client_id` do destino.|
+|exp|número|O timestamp (segundos desde 1970) de quando o token irá expirar.|
+|auth_time|número|Timestamp do momento em que o usuário foi autenticado.<br>Presente quando o cliente solicitou `require_auth_time`.|
+|nonce|texto|Um valor informado na requisição para validar o uso do token na sessão.|
+|amr|lista|Lista de identificadores de métodos de autenticação usados para autenticar o usuário. [Ver lista abaixo](#referencia_de_metodos_de_autenticacao)|
+
+### Atributos de usuário
 
 |Membro|Tipo|Descrição
 |---|---|---|
@@ -216,10 +273,10 @@ Esta é base principal do OpenID, dos fluxos de autenticação.
 |email|texto|Endereço de e-mail preferido do usuário.|
 |email_verified|booleano|`true` se foi adotada maneiras de garantir que este e-mail é controlado por este usuário.|
 |gender|texto|`male`, `female` ou outro valor.|
-|birthdate||Data de nascimento no formato `YYYY-MM-DD` ou `YYYY`.<br>Se o ano for `0000`, então o valor foi omitido.|
-|zoneinfo||Fuso horário do usuário. _ex.: `America/Sao_Paulo`_ [Consultar lista](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)|
-|locale||Localização ou idioma do usuário. _ex.: `pt-BR`_ [Consultar lista](https://gist.github.com/msikma/8912e62ed866778ff8cd)|
-|phone_number||Número de telefone preferencial do usuário. _ex.: `+5511955552222`_|
+|birthdate|texto|Data de nascimento no formato `YYYY-MM-DD` ou `YYYY`.<br>Se o ano for `0000`, então o valor foi omitido.|
+|zoneinfo|texto|Fuso horário do usuário. _ex.: `America/Sao_Paulo`_ [Consultar lista](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)|
+|locale|texto|Localização ou idioma do usuário. _ex.: `pt-BR`_ [Consultar lista](https://gist.github.com/msikma/8912e62ed866778ff8cd)|
+|phone_number|texto|Número de telefone preferencial do usuário. _ex.: `+5511955552222`_|
 |phone_number_verified|booleano|`true` quando foi adotado maneiras de garantir que esse telefone realmente pertence à este usuário.|
 |address|objeto JSON|Endereço postal do usuário.|
 |updated_at|número|_Timestamp_ da última  vez que as informações foram atualizadas.|
@@ -233,6 +290,31 @@ Para representar uma claim em vários idiomas, usa-se o formato `[claim]#[idioma
 |`profile`|`https://exemplo.com.br/gabriel`|
 |`profile#en-US`|`https://example.com.us/gabriel`|
 |`profile#es`|`https://ejemplo.com.ar/gabriel`|
+
+### Referência de Métodos de Autenticação
+
+A claim `amr` segundo a [RFC8176](https://tools.ietf.org/html/rfc8176) pode ter uma lista dos seguintes valores:
+
+|Valor|Descrição
+|---|---|
+|pwd|Autenticação baseada em senha.|
+|pin|Número de identificação pessoal.|
+|sms|Confirmação de acesso via envio de um texto por SMS.|
+|tel|Confirmação de acesso via uma ligação para um número.|
+|mfa|Autenticação de múltiplo fator.<br>Quando estiver presente, deve incluir os métodos usados.|
+|otp|_One-time password_. Senhas de uso único, como as geradas em Autenticadores no celular.|
+|mca|Autenticação de múltiplo canal. Envolve mais de um canal de comunicação distinto.|
+|face|Autenticação biométrica usando reconhecimento facial.|
+|fpt|Autenticação biométrica usando uma digital (dedo).|
+|iris|Autenticação biométrica usando um escaneamento de íris.|
+|retina|Autenticação biométrica usando um escaneamento de retina.|
+|vbm|Autenticação biométrica usando uma impressão de voz.|
+|wia|Autenticação integrada do Windows.|
+|geo|Uso de informação geográfica para autenticação.|
+|swk|Prova de possessão através de um software de chave.|
+|hwk|Prova de possessão através de um dispositivo de chave.|
+|kba|Autenticação por base de conhecimento.|
+|sc|Uso de cartões inteligentes.|
 
 ## UserInfo Endpoint
 
@@ -276,7 +358,7 @@ WWW-Authenticate: Bearer realm="openid",
 
 ## Segurança
 
-Algumas dicas e procedimentos para prevenir falhas de segurança e ataques maliciosos.
+Algumas dicas e procedimentos para prevenir falhas de segurança e ataques maliciosos. [RFC6819](https://tools.ietf.org/html/rfc6819)
 
 - Rotacionar o código secreto do cliente de tempos em tempos (3 meses?).
 - Ao criar um token novo, salvar em algum lugar o `jti`, como uma instância Redis, que deve expirar assim que o token expira. Em toda requisição, validar se aquele `jti` ainda existe no Redis. Em caso de atividade suspeita, remover o `jti` do Redis, o que irá invalidar todas as requisições, mesmo com um token válido. _("Blacklist")_
@@ -290,3 +372,4 @@ Outras fontes de leitura (bibliografia):
 
 - [Auth0 Docs](https://auth0.com/docs/get-started)
 - [OpenID Blog - Financial-grade API (FAPI) Explained by an Implementer](https://fapi.openid.net/2020/02/26/guest-blog-financial-grade-api-fapi-explained-by-an-implementer/)
+- [Understanding ID Token](https://darutk.medium.com/understanding-id-token-5f83f50fa02e)
