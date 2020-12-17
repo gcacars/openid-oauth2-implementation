@@ -356,7 +356,138 @@ WWW-Authenticate: Bearer realm="openid",
   error_description="O token de acesso expirou!"
 ```
 
-## Segurança
+# OpenID Client Registration
+
+Define como as aplicações cliente (_relying parties_) conseguem se registrar (castro inicial), usando a especificação [OpenID Connect Dynamic Registration](https://openid.net/specs/openid-connect-registration-1_0.html).
+
+## Registro
+
+|Metadado|Descrição|
+|---|---|
+|redirect_uris|Lista de URIs usados pelo cliente.<br>Deve ser idêntico ao informado na requisição de autenticação em `redirect_uri`.<br>Deve estar presente também em `sector_identifier_uri`|
+|response_types|Uma lista que restringe ele mesmo dos tipos de resposta (`response_type`) que pode obter.<br>De: `code`, `token`, `id_token`|
+|grant_types|Lista de auto-restrição dos tipos de `grant_type` que pode usar.<br>De: `authorization_code`, `implicit`, `refresh_token`.|
+|application_type|O tipo de aplicação, por padrão é `web`, mas pode ser também `native`.|
+|contacts|Lista de e-mails dos responsáveis.|
+|client_name|Nome da aplicação que é apresentado para o usuário.|
+|logo_uri|URL da imagem do logotipo apresentado para o usuário.|
+|client_uri|URL da página inicial da aplicação.|
+|policy_uri|URL da política de privacidade, informando como os dados do usuário são usados. (LGPD)|
+|tos_uri|URL da página de termos de serviço.|
+|subject_type|Uma lista de tipos de sujeito que a aplicação pode usar.<br>De: `public` ou `pairwise`.<br>No _nexso_ aplicações externas devem usar `pairwise` obrigatoriamente. (LGPD)|
+|default_max_age|Validade máxima padrão da autenticação em segundos.<br>Nesse período o usuário deve se manter ativo.|
+|require_auth_time|Booleano que indica se a claim `auth_time` deve estar presente. Por padrão é `false`.|
+|default_acr_values|Lista que especifica os valores padrões de `acr` em ordem de preferência.|
+|initiate_login_uri|URI em `https` que um terceiro pode usar para iniciar o login. Deve aceitar tanto os métodos `GET` e `POST` como os parâmetros `login_hint`, `iss` e `target_link_uri`.|
+|request_uris|Lista de URIs que serão pré-registradas para essa aplicação no IdP, habilitando o cache dos dados.<br>A URI pode conter um fragmento que é o hash SHA-256 do conteúdo do arquivo usado para versionamento.|
+|sector_identifier_uri|URL usando `https` para calcular um identificador pseudônimo para as contas pelo IdP, referenciando um arquivo JSON com a lista de URLs.<br>Relativo ao `pairwise` e deve conter as URIs que estão em `redirect_uris`.<br>Provê uma forma de alterar o `redirect_uri` sem ter que registrar novamente todos seus usuários.|
+|request_object_signing_alg|Algoritmo usado para verificar a assinatura quando a requisição de autenticação ocorre com os dados em um JWT, tanto por valor `request` ou por referência `request_uri`.|
+|request_object_encryption_alg|Algoritmo criptográfico para usar no JWE para criptografar o token de requisição de autenticação.|
+|token_endpoint_auth_method|Forma de autenticação da aplicação (cliente) na requisição de token.<br>Pode ser: `client_secret_basic` (padrão), `client_secret_post`, `client_secret_jwt`, `private_key_jwt`.<br>No FAPI ainda existe: `tls_client_auth` e `self_signed_tls_client_auth`.|
+|token_endpoint_auth_signing_alg|Algoritmo usado para assinar o JWT usado para autenticar o cliente quando o método é `private_key_jwt` ou `client_secret_jwt`.|
+|id_token_signed_response_alg|Algoritmo usado para assinar o JWS.<br>Por padrão: `RS256`.|
+|id_token_encrypted_response_alg|Algoritmo de criptografia usado no JWE.<br>Por padrão: `A128CBC-HS256`.|
+|userinfo_signed_response_alg|JWS algoritmo para assinar respostas da _UserInfo_. (opcional)|
+|userinfo_encrypted_response_alg|Algoritmo para usar no JWE para criptografar a resposta da _UserInfo_. (opcional)|
+|userinfo_encrypted_response_enc|Algoritmo criptográfico para usar no JWE para criptografar a resposta da _UserInfo_. (opcional)|
+|jwks_uri|URL do JSON Web Key Set da aplicação.|aws
+
+Os metadados `client_name`, `tos_uri`, `policy_uri`, `logo_uri`, `client_uri` podem ter opções em outros idiomas usando o # e o código do idioma [conforme descrito acima](#claims_em_varios_idiomas).
+
+### Requisição de Registro
+
+A requisição contém os metadados indicados acima.
+
+```http
+POST /connect/register HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+Host: server.example.com
+Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJ ...
+
+{
+ "application_type": "web",
+ "redirect_uris": ["https://client.example.org/callback",
+    "https://client.example.org/callback2"],
+ "client_name": "My Example",
+ "client_name#ja-Jpan-JP": "クライアント名",
+ "logo_uri": "https://client.example.org/logo.png",
+ "subject_type": "pairwise",
+ "token_endpoint_auth_method": "client_secret_basic",
+ "request_uris":
+   ["https://client.example.org/rf.txt#qpXaRLh_n93TTR9F252ValdatUQvQiJi5BDub2BeznA"]
+}
+```
+
+#### URI identificadora de setor
+
+No campo `sector_identifier_uri` deve ser informado o caminho para um arquivo JSON.  
+A requisição seria algo como:
+
+```http
+GET /file_of_redirect_uris.json HTTP/1.1
+Accept: application/json
+Host: other.example.net
+```
+
+E deve obter como resposta:
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+Cache-Control: no-store
+Pragma: no-cache
+
+[ "https://client.example.org/callback",
+  "https://client.example.org/callback2",
+  "https://client.other_company.example.net/callback" ]
+```
+
+### Resposta de Registro
+
+A resposta retorna os metadados informados na requisição e mais os valores padrões, além do ID gerado para o cliente e o segredo (se aplicável) conforme a tabela:
+
+|Metadado|Descrição|
+|---|---|
+|client_id|O identificador único do cliente (aplicação).|
+|client_secret|O segredo gerado para a aplicação conseguir se autenticar na requisição de Token.|
+|registration_access_token|Um token de acesso que pode ser usada pela aplicação para usar outros métodos.|
+|registration_client_uri|URI do local onde o cliente pode usar o token de acesso acima para executar outras operações.|
+|client_id_issued_at|Timestamp de quando o registro foi criado.|
+|client_secret_expires_at|Timestamp de quando o segredo irá expirar, ou `0` caso não tenha data de validade.|
+
+```http
+HTTP/1.1 201 Created
+Content-Type: application/json
+Cache-Control: no-store
+Pragma: no-cache
+
+{
+  "client_id": "s6BhdRkqt3",
+  "client_secret": "ZJYCqe3GGRvdrudKyZS0XhGv_Z45DuKhCUk0gBR1vZk",
+  "client_secret_expires_at": 1577858400,
+  "registration_access_token": "this.is.an.access.token.value.ffx83",
+  "registration_client_uri": "https://server.example.com/connect/register?ient_id=s6BhdRkqt3",
+  "token_endpoint_auth_method": "client_secret_basic",
+  "application_type": "web",
+  "redirect_uris": ["https://client.example.org/callback",
+    "https://client.example.org/callback2"],
+  "client_name": "My Example",
+  "client_name#ja-Jpan-JP": "クライアント名",
+  "logo_uri": "https://client.example.org/logo.png",
+  "subject_type": "pairwise",
+  "request_uris": ["https://client.example.org/rf.txt#qpXaRLh_n93TTR9F252ValdatUQvQiJi5BDub2BeznA"]
+}
+```
+
+## Segurança do Registro
+
+- Deve usar TLS, visto que trafega as credenciais em texto puro.
+- Personificação do logotipo: um trapaceiro pode tentar imitar a tela de permissão usando o logotipo oficial. Para garantir isso podemos adotar (no contexto do _nexso_):
+  - O servidor de autenticação deve exibir um alerta quando o logotipo não vem do domínio do cliente.
+  - A imagem do logotipo pode ter restrição de acesso, permitindo apenas o IdP acessar a imagem.
+
+# Segurança
 
 Algumas dicas e procedimentos para prevenir falhas de segurança e ataques maliciosos. [RFC6819](https://tools.ietf.org/html/rfc6819)
 
