@@ -47,7 +47,13 @@ Além disso esse documento é um estudo para um projeto pessoal, e podem fazer r
 - [node openid-client](https://www.npmjs.com/package/openid-client)
 - [RFC7515 - JWS](https://tools.ietf.org/html/draft-ietf-jose-json-web-signature-41)
 
-### Conceitos
+#### Requisitos para entendimento
+
+- Protocolo HTTP
+- OAuth 2.0 (recomendável)
+- JWT (Header, Payload, Signature)
+
+## Conceitos
 
 - **Identity** (ou Identidade) é um conjunto de atributos relacionados à uma entidade (ISO29115). No mundo real a entidade *pessoa* pode ter várias identidades: Pai, Funcionário, Marido...  
 - Uma camada de Identidade provê (5W1H):
@@ -58,149 +64,154 @@ Além disso esse documento é um estudo para um projeto pessoal, e podem fazer r
   - **What:** quais atributos ele pode oferecer
   - **Why:** porquê ele está oferecendo
 - OpenID = **autenticação** (certifica que você é você)
-- OAuth 2.0 = **autorização** (certifica que você acesse só o que você tem permissão)trantra
+- OAuth 2.0 = **autorização** (certifica que você acesse só o que você tem permissão)
 
-#### Requisitos para entendimento
-
-- JWT (Header, Payload, Signature)
-
-# OpenID Connect
+## OpenID Connect
 
 As anotações abaixo referenciam a especificação OpenID Connect Core 1.0.  
 Esta é base principal do OpenID, dos fluxos de autenticação.
 
-## Fluxos de autenticação (_flows_)
+### Fluxos de autenticação (_flows_)
 
-- **Authorization Code**  
-    O fluxo mais comum. Uma aplicação percebe que não há sessão e redireciona o usuário para uma tela de login. Após informado usuário e senha, este redireciona para a aplicação de volta junto com um código temporário. No back-end, o código temporário serve para trocar o código por um token de acesso e de id.
+#### 1. Authorization Code
 
-    Vantagens:
-    - Não expõe o token para o navegador (User Agent).  
-    - O cliente recebe publicamente um código, e internamente troca por um token de acesso.
+O fluxo mais comum. Uma aplicação percebe que não há sessão e redireciona o usuário para uma tela de login. Após informado usuário e senha, este redireciona para a aplicação de volta junto com um código temporário. No back-end, o código temporário serve para trocar o código por um token de acesso e de id.
 
-    ### Requisição da Autenticação
+Vantagens:
 
-    ```http
-    HTTP/1.1 302 Found
-    Location: https://server.example.com/authorize?
-        response_type=code
-        &scope=openid%20profile%20email
-        &client_id=s6BhdRkqt3
-        &state=af0ifjsldkj
-        &redirect_uri=https%3A%2F%2Fclient.example.org%2Fcb
-    ```
+- Não expõe o token para o navegador (User Agent).  
+- O cliente recebe publicamente um código, e internamente troca por um token de acesso.
 
-    |Parâmetro|Valor e descrição|
-    |---|---|
-    |response_type|`code`|
-    |scope|`openid`|
-    |client_id|_Código da aplicação requisitando um token._|
-    |redirect_uri|_Deve ser `https`._<br>_Deve estar registrado no IdP._|
-    |state|_Evita CSRF e XSRF._<br>_Pode ser o hash de um cookie do navegador no cliente._|
-    |[nonce]|_Deve ser um hash relacionado à sessão (pode ser baseado em cookie HttpOnly com um valor aleatório._|
-    |prompt|_Lista separada por espaço de como o IdP pergunta pro usuário sobre consentimento ou re-autenticação._<br>`none` não faz nada (usado pra checar se tem permissões e sessão)<br>`login` (só mostra tela de autenticação)<br>`consent` (só pede consentimento)<br>`select_account` (pede para o usuário escolher uma das contas ativas)|
-    |max_age|Tempo máximo em segundos em que um usuário é considerado autenticado.<br>Quando esse tempo termina, uma requisição nova no endpoint de autorização, irá pedir que o usuário se autentique novamente).|
-    |ui_locales|Lista separada por espaço e em ordem de preferência dos idiomas para a tela de login. Ex: `pt-BR pt en`
-    |id_token_hint|Envia um token previamente emitido pelo IdP. Retorna sucesso quando já está autenticado, ou um erro caso contrário.<br>Deve ser usado quando o `prompt=none` é informado.<br>O próprio IdP tem que estar como audiência `aud` do token.|
-    |login_hint|Informa um endereço de `e-mail` ou `telefone` que será preenchido automaticamente na tela de login.|
+##### Requisição da Autenticação
 
-    ### Erros de Autenticação
+```http
+HTTP/1.1 302 Found
+Location: https://server.example.com/authorize?
+    response_type=code
+    &scope=openid%20profile%20email
+    &client_id=s6BhdRkqt3
+    &state=af0ifjsldkj
+    &redirect_uri=https%3A%2F%2Fclient.example.org%2Fcb
+```
 
-    ```http
-    HTTP/1.1 302 Found
-    Location: https://client.example.org/cb?
-        error=invalid_request
-        &error_description=Unsupported%20response_type%20value
-        &state=af0ifjsldkj
-    ```
+|Parâmetro|Valor e descrição|
+|---|---|
+|response_type|`code`|
+|scope|`openid`|
+|client_id|_Código da aplicação requisitando um token._|
+|redirect_uri|_Deve ser `https`._<br>_Deve estar registrado no IdP._|
+|state|_Evita CSRF e XSRF._<br>_Pode ser o hash de um cookie do navegador no cliente._|
+|[nonce]|_Deve ser um hash relacionado à sessão (pode ser baseado em cookie HttpOnly com um valor aleatório._|
+|prompt|_Lista separada por espaço de como o IdP pergunta pro usuário sobre consentimento ou re-autenticação._<br>`none` não faz nada (usado pra checar se tem permissões e sessão)<br>`login` (só mostra tela de autenticação)<br>`consent` (só pede consentimento)<br>`select_account` (pede para o usuário escolher uma das contas ativas)|
+|max_age|Tempo máximo em segundos em que um usuário é considerado autenticado.<br>Quando esse tempo termina, uma requisição nova no endpoint de autorização, irá pedir que o usuário se autentique novamente).|
+|ui_locales|Lista separada por espaço e em ordem de preferência dos idiomas para a tela de login. Ex: `pt-BR pt en`
+|id_token_hint|Envia um token previamente emitido pelo IdP. Retorna sucesso quando já está autenticado, ou um erro caso contrário.<br>Deve ser usado quando o `prompt=none` é informado.<br>O próprio IdP tem que estar como audiência `aud` do token.|
+|login_hint|Informa um endereço de `e-mail` ou `telefone` que será preenchido automaticamente na tela de login.|
 
-    |Error|Descrição|
-    |---|---|
-    |interaction_required|Quando `prompt=true` porém é preciso exibir uma tela.|
-    |login_required|Quando `prompt=true` porém é preciso exibir a tela de login.|
-    |account_selection_required|Quando `prompt=true` porém é preciso exibir a tela para selecionar a sessão.|
-    |consent_required|Quando `prompt=true` porém é preciso exibir a tela de consentimento.|
-    |invalid_request_uri|Quando `request_uri` está inválido.|
-    |invalid_request_object|Algo na requisição é inválido.|
-    |request_not_supported|Não suporta a requisição informada.|
-    |request_uri_not_supported|Não suporta o `request_uri` informado.|
-    |registration_not_supported|Não suporta o `	registration` informado.|
+##### Erros de Autenticação
 
-    ### Validação da resposta da Autenticação
+```http
+HTTP/1.1 302 Found
+Location: https://client.example.org/cb?
+    error=invalid_request
+    &error_description=Unsupported%20response_type%20value
+    &state=af0ifjsldkj
+```
 
-    ```http
-    HTTP/1.1 302 Found
-    Location: https://client.example.org/cb?
-        code=SplxlOBeZQQYbYS6WxSbIA
-        &state=af0ifjsldkj
-    ```
+|Erro|Descrição|
+|---|---|
+|interaction_required|Quando `prompt=true` porém é preciso exibir uma tela.|
+|login_required|Quando `prompt=true` porém é preciso exibir a tela de login.|
+|account_selection_required|Quando `prompt=true` porém é preciso exibir a tela para selecionar a sessão.|
+|consent_required|Quando `prompt=true` porém é preciso exibir a tela de consentimento.|
+|invalid_request_uri|Quando `request_uri` está inválido.|
+|invalid_request_object|Algo na requisição é inválido.|
+|request_not_supported|Não suporta a requisição informada.|
+|request_uri_not_supported|Não suporta o `request_uri` informado.|
+|registration_not_supported|Não suporta o `registration` informado.|
 
-    |Item|Validação|
-    |---|---|
-    |code|Obrigatório.|
-    |state|Obrigatório se foi informado na requisição.<br>Deve ser idêntico ao informado antes.|
+##### Validação da resposta da Autenticação
 
-    ### Requisição de Token
+```http
+HTTP/1.1 302 Found
+Location: https://client.example.org/cb?
+    code=SplxlOBeZQQYbYS6WxSbIA
+    &state=af0ifjsldkj
+```
 
-    ```http
-    POST /token HTTP/1.1
-    Host: server.example.com
-    Content-Type: application/x-www-form-urlencoded
-    Authorization: Basic czZCaGRSa3F0MzpnWDFmQmF0M2JW
+|Item|Validação|
+|---|---|
+|code|Obrigatório.|
+|state|Obrigatório se foi informado na requisição.<br>Deve ser idêntico ao informado antes.|
 
-    grant_type=authorization_code&code=SplxlOBeZQQYbYS6WxSbIA
-        &redirect_uri=https%3A%2F%2Fclient.example.org%2Fcb
-    ```
+##### Requisição de Token
 
-    |Parâmetro|Valor e descrição|
-    |---|---|
-    |grant_type|`authorization_code`|
-    |code|O código recebido na requisição de Autenticação.|
-    |redirect_uri|A URL que será redirecionado após o login.<br>Note que essa URL precisa ser idêntica a informada na requisição de Autenticação.|
-    |client_id|O identificador do cliente (aplicação).|
+```http
+POST /token HTTP/1.1
+Host: server.example.com
+Content-Type: application/x-www-form-urlencoded
+Authorization: Basic czZCaGRSa3F0MzpnWDFmQmF0M2JW
 
-    ### Erro na requisição do Token
+grant_type=authorization_code&code=SplxlOBeZQQYbYS6WxSbIA
+    &redirect_uri=https%3A%2F%2Fclient.example.org%2Fcb
+```
 
-    ```http
-    HTTP/1.1 400 Bad Request
-    Content-Type: application/json
-    Cache-Control: no-store
-    Pragma: no-cache
+|Parâmetro|Valor e descrição|
+|---|---|
+|grant_type|`authorization_code`|
+|code|O código recebido na requisição de Autenticação.|
+|redirect_uri|A URL que será redirecionado após o login.<br>Note que essa URL precisa ser idêntica a informada na requisição de Autenticação.|
+|client_id|O identificador do cliente (aplicação).|
 
-    {
-        "error": "invalid_request"
-    }
-    ```
+##### Erro na requisição do Token
 
-    ### Validação da resposta do Token
+```http
+HTTP/1.1 400 Bad Request
+Content-Type: application/json
+Cache-Control: no-store
+Pragma: no-cache
 
-    ```http
-    HTTP/1.1 200 OK
-    Content-Type: application/json;charset=UTF-8
-    Cache-Control: no-store
-    Pragma: no-cache
+{
+    "error": "invalid_request"
+}
+```
 
-    {
-        "access_token":"2YotnFZFEjr1zCsicMWpAA",
-        "token_type":"example",
-        "expires_in":3600,
-        "refresh_token":"tGzv3JOkF0XG5Qx2TlKWIA",
-        "example_parameter":"example_value"
-    }
-    ```
+##### Validação da resposta do Token
 
-    |Item|Validação|
-    |---|---|
-    |access_token|Deve existir.|
-    |token_type|Deve ser `Bearer`.|
-    |id_token|Deve existir e validar conforme [descrito abaixo](#validacao-do-id-token).|
-    |expires_in|Segundos em que o token irá expirar após a requisição.|
-    |refresh_token|Token que pode ser usado para renovar o atual após a expiração.|
-    |scope|Deve existir se foi informado na requisição, e deverá ser idêntico.|
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json;charset=UTF-8
+Cache-Control: no-store
+Pragma: no-cache
 
-## ID Token
+{
+    "access_token":"2YotnFZFEjr1zCsicMWpAA",
+    "token_type":"example",
+    "expires_in":3600,
+    "refresh_token":"tGzv3JOkF0XG5Qx2TlKWIA",
+    "example_parameter":"example_value"
+}
+```
 
-### Validação do ID Token
+|Item|Validação|
+|---|---|
+|access_token|Deve existir.|
+|token_type|Deve ser `Bearer`.|
+|id_token|Deve existir e validar conforme [descrito abaixo](#validacao-do-id-token).|
+|expires_in|Segundos em que o token irá expirar após a requisição.|
+|refresh_token|Token que pode ser usado para renovar o atual após a expiração.|
+|scope|Deve existir se foi informado na requisição, e deverá ser idêntico.|
+
+#### 2. Implícito
+
+- Retorna o token de acesso em um única requisição, útil quando trabalhamos com SPAs, por exemplo.
+- Em contra partida, tem uma segurança menor.
+
+#### 3. Híbrido
+
+### ID Token
+
+#### Validação do ID Token
 
 |#|Item|Validação|
 |-|---|---|
@@ -216,37 +227,37 @@ Esta é base principal do OpenID, dos fluxos de autenticação.
 |10|acr|Se o `acr` foi informado na requisição, deve-se checar se o valor é apropriado.|
 |11|auth_time|Se o `auth_time` foi informado na requisição, ou o `max_age` então esta claim deve ser validada.<br>Deve ser solicitada uma nova autenticação se muito tempo se passou desde a última autenticação do usuário.|
 
-### JWT, JWE, JWS e JWTs aninhados
+#### JWT, JWE, JWS e JWTs aninhados
 
-#### JWT
+##### JWT
 
 [RFC7519](https://tools.ietf.org/html/rfc7519) O resultado de 3 JSONs codificados em base64: `Cabeçalho.Corpo.Assinatura`.  
 _Note que após a decodificação do JWT usando o base64, todo seu conteúdo se torna público._
 
-#### JWS
+##### JWS
 
 [RFC7515](https://tools.ietf.org/html/rfc7515) O JWS é um JWT com assinatura (o mesmo que acima). Dessa forma é possível verificar que um Corpo (_payload_) não foi alterado após sua geração.  
 _Obrigatório no OpenID!_
 
-#### JWE
+##### JWE
 
 [RFC7516](https://tools.ietf.org/html/rfc7516) Diferente dos dois acimas, o JWE é um JWT que possui seus dados criptografados. Ou seja, não é possível ver seu conteúdo facilmente, sem o uso de uma chave.  
 Segue o padrão: `Cabeçalho.Chave.Vetor.Corpo.Marca`.  
 _Opcional no OpenID_
 
-#### JWT aninhado
+##### JWT aninhado
 
 Ou _Nested JWT_ é um JWT dentro do outro. No OpenID geramos um JWS (o token com o payload e assinado) e então colocamos esse token dentro de outro JWT, mas criptografado, gerando um JWE.
 
 ![JWT aninhado (padrão JWS em JWE)](https://miro.medium.com/max/700/1*SuPjAL5ZN4Us1mbpZ8hGAw.png)  
 _JWT aninhado (padrão JWS em JWE)_
 
-## Claims
+### Claims
 
 Os JWTs do OpenID contém várias _claims_ (reivindicações/direitos).  
 Alguns são padrões e estão definidos na [RFC7519](https://tools.ietf.org/html/rfc7519).
 
-### Atributos padrão
+#### Atributos padrão
 
 |Membro|Tipo|Descrição
 |---|---|---|
@@ -256,7 +267,7 @@ Alguns são padrões e estão definidos na [RFC7519](https://tools.ietf.org/html
 |nonce|texto|Um valor informado na requisição para validar o uso do token na sessão.|
 |amr|lista|Lista de identificadores de métodos de autenticação usados para autenticar o usuário. [Ver lista abaixo](#referencia_de_metodos_de_autenticacao)|
 
-### Atributos de usuário
+#### Atributos de usuário
 
 |Membro|Tipo|Descrição
 |---|---|---|
@@ -266,7 +277,7 @@ Alguns são padrões e estão definidos na [RFC7519](https://tools.ietf.org/html
 |family_name|texto|Sobrenome do usuário.|
 |middle_name|texto|Nome do meio do usuário (se existir).|
 |nickname|texto|Nome casual do usuário, ou como prefere ser chamado. _ex.: `Gabs`_|
-|preferred_username|texto|Nome curto que representa o usuário, ou o "login". _ex.: `gcacars` ou `_g@ta.123`_|
+|preferred_username|texto|Nome curto que representa o usuário, ou o "login".<br>_Ex.:_ `gcacars` _ou_ `_g@ta.123`|
 |profile|texto|URL da página de perfil do usuário.|
 |picture|texto|URL da imagem de perfil **do usuário** (não uma qualquer).|
 |website|texto|URL do Blog, site ou página na organização do usuário.|
@@ -276,12 +287,12 @@ Alguns são padrões e estão definidos na [RFC7519](https://tools.ietf.org/html
 |birthdate|texto|Data de nascimento no formato `YYYY-MM-DD` ou `YYYY`.<br>Se o ano for `0000`, então o valor foi omitido.|
 |zoneinfo|texto|Fuso horário do usuário. _ex.: `America/Sao_Paulo`_ [Consultar lista](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)|
 |locale|texto|Localização ou idioma do usuário. _ex.: `pt-BR`_ [Consultar lista](https://gist.github.com/msikma/8912e62ed866778ff8cd)|
-|phone_number|texto|Número de telefone preferencial do usuário. _ex.: `+5511955552222`_|
+|phone_number|texto|Número de telefone preferencial do usuário. _ex_.: `+5511955552222`|
 |phone_number_verified|booleano|`true` quando foi adotado maneiras de garantir que esse telefone realmente pertence à este usuário.|
 |address|objeto JSON|Endereço postal do usuário.|
 |updated_at|número|_Timestamp_ da última  vez que as informações foram atualizadas.|
 
-### Claims em vários idiomas
+#### Claims em vários idiomas
 
 Para representar uma claim em vários idiomas, usa-se o formato `[claim]#[idioma][-[PAÍS]]?`, como por exemplo:
 
@@ -291,7 +302,7 @@ Para representar uma claim em vários idiomas, usa-se o formato `[claim]#[idioma
 |`profile#en-US`|`https://example.com.us/gabriel`|
 |`profile#es`|`https://ejemplo.com.ar/gabriel`|
 
-### Referência de Métodos de Autenticação
+#### Referência de Métodos de Autenticação
 
 A claim `amr` segundo a [RFC8176](https://tools.ietf.org/html/rfc8176) pode ter uma lista dos seguintes valores:
 
@@ -316,9 +327,9 @@ A claim `amr` segundo a [RFC8176](https://tools.ietf.org/html/rfc8176) pode ter 
 |kba|Autenticação por base de conhecimento.|
 |sc|Uso de cartões inteligentes.|
 
-## UserInfo Endpoint
+### UserInfo Endpoint
 
-### Requisição
+#### Requisição
 
 Deve ser acessado uma rota enviando o token de acesso no cabeçalho.
 
@@ -328,7 +339,7 @@ GET /userinfo HTTP/1.1
   Authorization: Bearer SlAV32hkKG
 ```
 
-### Resposta
+#### Resposta
 
 ```http
 HTTP/1.1 200 OK
@@ -345,7 +356,7 @@ Content-Type: application/json
 }
 ```
 
-### Erro
+#### Erro
 
 Retorna um cabeçalho de resposta para identificar o tipo de autenticação que deve ser usado para conseguir acesso ao recurso. [WWW-Authenticate](https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Headers/WWW-Authenticate)
 
@@ -356,11 +367,11 @@ WWW-Authenticate: Bearer realm="openid",
   error_description="O token de acesso expirou!"
 ```
 
-# OpenID Client Registration
+## OpenID Client Registration
 
 Define como as aplicações cliente (_relying parties_) conseguem se registrar (castro inicial), usando a especificação [OpenID Connect Dynamic Registration](https://openid.net/specs/openid-connect-registration-1_0.html).
 
-## Registro
+### Registro
 
 |Metadado|Descrição|
 |---|---|
@@ -390,11 +401,11 @@ Define como as aplicações cliente (_relying parties_) conseguem se registrar (
 |userinfo_signed_response_alg|JWS algoritmo para assinar respostas da _UserInfo_. (opcional)|
 |userinfo_encrypted_response_alg|Algoritmo para usar no JWE para criptografar a resposta da _UserInfo_. (opcional)|
 |userinfo_encrypted_response_enc|Algoritmo criptográfico para usar no JWE para criptografar a resposta da _UserInfo_. (opcional)|
-|jwks_uri|URL do JSON Web Key Set da aplicação.|aws
+|jwks_uri|URL do JSON Web Key Set da aplicação.|
 
 Os metadados `client_name`, `tos_uri`, `policy_uri`, `logo_uri`, `client_uri` podem ter opções em outros idiomas usando o # e o código do idioma [conforme descrito acima](#claims_em_varios_idiomas).
 
-### Requisição de Registro
+#### Requisição de Registro
 
 A requisição contém os metadados indicados acima.
 
@@ -419,7 +430,7 @@ Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJ ...
 }
 ```
 
-#### URI identificadora de setor
+##### URI identificadora de setor
 
 No campo `sector_identifier_uri` deve ser informado o caminho para um arquivo JSON.  
 A requisição seria algo como:
@@ -443,7 +454,7 @@ Pragma: no-cache
   "https://client.other_company.example.net/callback" ]
 ```
 
-### Resposta de Registro
+#### Resposta de Registro
 
 A resposta retorna os metadados informados na requisição e mais os valores padrões, além do ID gerado para o cliente e o segredo (se aplicável) conforme a tabela:
 
@@ -480,14 +491,110 @@ Pragma: no-cache
 }
 ```
 
-## Segurança do Registro
+### Segurança do Registro
 
 - Deve usar TLS, visto que trafega as credenciais em texto puro.
 - Personificação do logotipo: um trapaceiro pode tentar imitar a tela de permissão usando o logotipo oficial. Para garantir isso podemos adotar (no contexto do _nexso_):
   - O servidor de autenticação deve exibir um alerta quando o logotipo não vem do domínio do cliente.
   - A imagem do logotipo pode ter restrição de acesso, permitindo apenas o IdP acessar a imagem.
+- Restringir o acesso ao serviço apenas à rede interna, ou aplicações autorizadas.
 
-# Segurança
+## Gerenciamento da sessão
+
+No OpenID a sessão se inicia quando a aplicação valida o ID Token recebido através do parâmetro `session_state`, calculado com base no ID do Cliente, na URL de origem e User Agent do navegador.
+
+### iframe do próprio Cliente (RP)
+
+Na aplicação podemos ter um iframe invisível incluso, que de tempos em tempos verifica se o usuário ainda tem sessão ativa e se ainda é o mesmo, através da troca de mensagens com o iframe enviando o código de estado recebido acima. Por segurança deve garantir que a troca de mensagens ocorre com a origem certa.
+
+Um exemplo de código pode ser:
+
+```js
+var stat = "unchanged";
+var mes = client_id + " " + session_state;
+var targetOrigin = "https://server.example.com"; // Validates origin
+var opFrameId = "op";
+var timerID;
+
+function check_session()   {
+  var win = window.parent.frames[opFrameId].contentWindow;
+  win.postMessage(mes, targetOrigin);
+}
+
+function setTimer() {
+  check_session();
+  timerID = setInterval(check_session, 5 * 1000);
+}
+
+window.addEventListener("message", receiveMessage, false);
+
+function receiveMessage(e) {
+  if (e.origin !== targetOrigin) {
+    return;
+  }
+  stat = e.data;
+  if (stat === "changed") {
+    clearInterval(timerID);
+    // e fazer as ações descritas abaixo...
+  }
+}
+
+setTimer();
+```
+
+Quando detectar que uma sessão foi alterada, deve tentar uma requisição com `prompt=none` dentro do iframe para obter um novo ID Token, enviando o ID Token anterior em `id_token_hint`.
+
+Se receber um novo basta atualizar na sessão, porém deve verificar se pertence ao mesmo usuário. Caso contrário, ou em caso de erro, deve fazer logout.
+
+### iframe do IdP
+
+A aplicação também deve carregar um iframe do servidor de autenticação `check_session_iframe`, e o servidor deve garantir que quem está chamando é uma origem esperada.
+
+Quando receber uma mensagem de verificação, o iframe deve pegar o User Agent (que deve estar em um cookie ou no Local Storage) e calcular novamente o hash do `session_state`, se URL de origem ou ID do cliente não puderem ser detectados, então um `error` é enviado para a aplicação como resposta, ou se o cálculo difere `changed` é enviado demonstrando que não é a mesma sessão, e `unchanged` é enviado quando tudo está certo.
+
+Um exemplo de código pode ser:
+
+```js
+window.addEventListener("message", receiveMessage, false);
+
+function receiveMessage(e){ // e.data contém client_id e session_state
+
+  var client_id = e.data.split(' ')[0];
+  var session_state = e.data.split(' ')[1];
+  var salt = session_state.split('.')[1];
+
+  // se a mensagem for sintaticamente inválida retorna
+  //     postMessage('error', e.origin)
+
+  // se a mensagem vem de uma origem não esperada retorna
+  //     postMessage('error', e.origin)
+
+  // get_op_user_agent_state() é uma função definida no OP
+  // que retorna o estado do login de User Agent no OP.
+  // Como isso é feito, ele é quem decide.
+  var opuas = get_op_user_agent_state();
+
+  // Aqui, a session_state é calculada desse jeito particular,
+  // mas é inteiramente responsabilidade do OP decidir como fazer
+  // de acordo com os requerimentos definidos na especificação.
+  var ss = CryptoJS.SHA256(client_id + ' ' + e.origin + ' ' + opuas + ' ' + salt) + "." + salt;
+
+  var stat = '';
+  if (session_state === ss) {
+    stat = 'unchanged';
+  } else {
+    stat = 'changed';
+  }
+
+  e.source.postMessage(stat, e.origin);
+};
+```
+
+> O estado da sessão é alterado quando ocorre algum evento significativo: entrou, saiu, adicionou uma nova sessão...
+
+O parâmetro `check_session_iframe` deve ser fornecido pelo OpenID Provider Discovery, retornando a URL que o iframe irá carregar, aceitando requisições cross origens e usando o HTML postMessage API. Deve usar `https`.
+
+## Segurança
 
 Algumas dicas e procedimentos para prevenir falhas de segurança e ataques maliciosos. [RFC6819](https://tools.ietf.org/html/rfc6819)
 
