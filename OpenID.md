@@ -501,7 +501,17 @@ Pragma: no-cache
 
 ## Gerenciamento da sessão
 
-No OpenID a sessão se inicia quando a aplicação valida o ID Token recebido através do parâmetro `session_state`, calculado com base no ID do Cliente, na URL de origem e User Agent do navegador.
+No OpenID a sessão se inicia quando a aplicação valida o ID Token recebido através do parâmetro `session_state`, calculado com base no ID do Cliente, na URL de origem e User Agent do navegador. Por padrão a funcionalidade de encerrar uma sessão (logout) não está ativada.
+
+No `oidc-provider` ela pode ser ativada com o código abaixo, habilitando ainda as funcionalidades `check_session_iframe` (detecção de sessão) e `end_session_endpoint` (processo para encerrar uma sessão).
+
+```js
+const oidc = new Provider('http://localhost:3000', {
+    features: {
+        sessionManagement: true
+    }
+});
+```
 
 ### iframe do próprio Cliente (RP)
 
@@ -594,6 +604,91 @@ function receiveMessage(e){ // e.data contém client_id e session_state
 
 O parâmetro `check_session_iframe` deve ser fornecido pelo OpenID Provider Discovery, retornando a URL que o iframe irá carregar, aceitando requisições cross origens e usando o HTML postMessage API. Deve usar `https`.
 
+### Logout
+
+Descreve o processo de encerramento de sessão pela aplicação especificado em OIDC Front-Channel Logout 1.0 e OIDC Back-Channel Logout 1.0.
+
+#### Front-channel
+
+Esse processo ocorre no navegador do usuário, incorporando uma URL da aplicação (cliente/_Relying Party_) no IdP que irá limpar a sessão atual na aplicação.
+
+Essa URI absoluta usando `https` é indicada no registro do cliente (`frontchannel_logout_uri`) e deve estar presente nos valores de `redirect_uris`. O IdP carrega um iframe com essa URL no processo de logout, e a página deve limpar a sessão associada, como cookies e localStorage.
+O IdP enviará (configurar `frontchannel_logout_session_required` para verdadeiro) como _query parameters_ o `iss` (issuer) e `sid` (identificador da sessão) que devem ser comparados com os dados no token, e deve prevenir o cache:
+
+```http
+Cache-Control: no-cache, no-store
+Pragma: no-cache
+```
+
+Exemplo:
+
+```uri
+https://rp.example.org/frontchannel_logout?iss=https://server.example.com&sid=08a5019c-17e1-4977-8f42-65a12843ea02
+```
+
+#### Back-channel
+
+Diferentemente do front-channel esse processo tem uma comunicação direta entre o cliente (aplicação) e o servidor de autenticação ("IdP").
+
+##### Logout no servidor de autenticação
+
+No OpenID Connect Discovery, é preciso configurar os valores dos metadados abaixo no servidor de autenticação.
+
+|Metadado|Descrição|
+|---|---|
+|backchannel_logout_supported|Valor booleano que indica o suporte da funcionalidade.|
+|backchannel_logout_session_supported|Valor booleano que indica se o servidor deve enviar um `sid` (ID da sessão) no token de Logout para identificar a sessão.|
+
+##### Logout no cliente (aplicação)
+
+No registro do cliente deve ser informado os metadados:
+|Metadado|Descrição|
+|---|---|
+|backchannel_logout_uri|URL usando `https` da aplicação que irá limpar a sessão nela mesmo quando receber um token de Logout.|
+|backchannel_logout_session_required|Booleando que indica se deve ser enviado o `sid` no token de Logout.|
+
+###### Logout Token
+
+O token de logout, que deve ser assinado e pode ser criptografado e possui as claims:
+
+|Claim|Descrição|
+|---|---|
+|iss|URL do servidor de autenticação.|
+|sub|A identificação do sujeito/usuário.|
+|aud|O ID de cliente da aplicação.|
+|iat|Timestamp da data de geração do token.|
+|jti|Identificador único deste token.|
+|events|Um objeto JSON que contém o atributo vazio `http://schemas.openid.net/event/backchannel-logout` indicando que é um token de logout.|
+|sid|Identificador da sessão atual.|
+
+Exemplo:
+
+```json
+{
+    "iss": "https://server.example.com",
+    "sub": "248289761001",
+    "aud": "s6BhdRkqt3",
+    "iat": 1471566154,
+    "jti": "bWJq",
+    "sid": "08a5019c-17e1-4977-8f42-65a12843ea02",
+    "events": {
+        "http://schemas.openid.net/event/backchannel-logout": {}
+    }
+}
+```
+
+###### Requisição de logout
+
+Uma requisição HTTP POST é enviada para o endereço cadastrado no registro do aplicativo com o body em `application/x-www-form-urlencoded`:
+
+```http
+POST /backchannel_logout HTTP/1.1
+Host: rp.example.org
+Content-Type: application/x-www-form-urlencoded
+
+logout_token=eyJhbGci ... .eyJpc3Mi ... .T3BlbklE ...
+```
+
 ## Segurança
 
 Algumas dicas e procedimentos para prevenir falhas de segurança e ataques maliciosos. [RFC6819](https://tools.ietf.org/html/rfc6819)
@@ -611,3 +706,4 @@ Outras fontes de leitura (bibliografia):
 - [Auth0 Docs](https://auth0.com/docs/get-started)
 - [OpenID Blog - Financial-grade API (FAPI) Explained by an Implementer](https://fapi.openid.net/2020/02/26/guest-blog-financial-grade-api-fapi-explained-by-an-implementer/)
 - [Understanding ID Token](https://darutk.medium.com/understanding-id-token-5f83f50fa02e)
+- [Getting Started with oidc-provider](https://www.scottbrady91.com/OpenID-Connect/Getting-Started-with-oidc-provider)

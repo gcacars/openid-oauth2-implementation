@@ -1,0 +1,27 @@
+{
+  "name": "auth-server",
+  "version": "1.0.0",
+  "description": "Sample of Authentication Server, OP and IdP",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "auth",
+    "authentication",
+    "authorization",
+    "identity",
+    "provider",
+    "server",
+    "OP",
+    "IdP",
+    "oauth2",
+    "oidc",
+    "openid"
+  ],
+  "author": "Gabriel Anderson",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "oidc-provider": "^6.29.9"
+  }
+}
