@@ -101,7 +101,7 @@ Location: https://server.example.com/authorize?
 |client_id|_Código da aplicação requisitando um token._|
 |redirect_uri|_Deve ser `https`._<br>_Deve estar registrado no IdP._|
 |state|_Evita CSRF e XSRF._<br>_Pode ser o hash de um cookie do navegador no cliente._|
-|[nonce]|_Deve ser um hash relacionado à sessão (pode ser baseado em cookie HttpOnly com um valor aleatório._|
+|nonce|_Deve ser um hash relacionado à sessão (pode ser baseado em cookie HttpOnly com um valor aleatório._|
 |prompt|_Lista separada por espaço de como o IdP pergunta pro usuário sobre consentimento ou re-autenticação._<br>`none` não faz nada (usado pra checar se tem permissões e sessão)<br>`login` (só mostra tela de autenticação)<br>`consent` (só pede consentimento)<br>`select_account` (pede para o usuário escolher uma das contas ativas)|
 |max_age|Tempo máximo em segundos em que um usuário é considerado autenticado.<br>Quando esse tempo termina, uma requisição nova no endpoint de autorização, irá pedir que o usuário se autentique novamente).|
 |ui_locales|Lista separada por espaço e em ordem de preferência dos idiomas para a tela de login. Ex: `pt-BR pt en`
@@ -204,10 +204,105 @@ Pragma: no-cache
 
 #### 2. Implícito
 
-- Retorna o token de acesso em um única requisição, útil quando trabalhamos com SPAs, por exemplo.
-- Em contra partida, tem uma segurança menor.
+- Retorna o token de acesso em um única requisição (o endpoint de Token não é utilizado), útil quando trabalhamos com SPAs, por exemplo.
+- Em contra partida, tem uma segurança menor e por segurança **não** deve ser usado em aplicações que não são SPA (como as que tem um back-end).
 
-#### 3. Híbrido
+##### Requisição implícita
+
+A requisição de autenticação implícita, acontece da mesma forma que a [requisição de autorização por código de autorização](#requisicao_da_autenticacao), exceto por alguns parâmetros diferentes:
+
+|Parâmetro|Valor e descrição|
+|---|---|
+|response_type|Deve ser `id_token token`.|
+|nonce|Se torna obrigatório ser informado.|
+
+A validação e outros processos ocorrem da mesma forma que a [requisição de autorização por código de autorização](#requisicao_da_autenticacao), porém ao obter uma resposta, no redirecionamento de volta para a aplicação é enviados todos os parâmetros direto na URL:
+
+|Parâmetro|Descrição|
+|---|---|
+|access_token|O token de acesso.|
+|token_type|O tipo do token obtido. Sempre `Bearer`.|
+|id_token|O token de ID.|
+|state|O valor de estado informado na requisição.|
+|expires_in|Segundos em que o token irá expirar.|
+
+Por exemplo:
+
+```http
+HTTP/1.1 302 Found
+Location: https://client.example.org/cb#
+  access_token=SlAV32hkKG
+  &token_type=bearer
+  &id_token=eyJ0 ... NiJ9.eyJ1c ... I6IjIifX0.DeWt4Qu ... ZXso
+  &expires_in=3600
+  &state=af0ifjsldkj
+```
+
+Quando receber a resposta, é interessante a aplicação validar em um servidor (back-end) o que foi recebido. Um exemplo de código JS presente na página de callback pode ser:
+
+```html
+<script type="text/javascript">
+// Primeiro pegamos os parâmetros
+var params = {},
+    postBody = location.hash.substring(1),
+    regex = /([^&=]+)=([^&]*)/g,
+    m;
+while (m = regex.exec(postBody)) {
+    params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
+}
+
+// E enviamos o token para os servidor
+var req = new XMLHttpRequest();
+// usando o POST, assim não é registrado no histórico do navegador
+req.open('POST', 'https://' + window.location.host + '/catch_response', true);
+req.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+req.onreadystatechange = function (e) {
+    if (req.readyState === 4) {
+        if (req.status === 200) {
+            // Se foi OK, então redireciona para a tela principal
+            window.location = 'https://' + window.location.host + '/apos_login'
+        }
+        // Se for inválido, gera um erro
+        else if (req.status === 400) {
+            alert('Ocorreu um erro ao processar o token.')
+        } else {
+            alert('Alguma coisa deu errada.')
+        }
+    }
+};
+req.send(postBody);
+</script>
+```
+
+##### Token da autenticação implícita
+
+Esses parâmetros adicionais estarão presentes no ID Token recebido:
+
+|Claim|Descrição|
+|---|---|
+|nonce|O número aleatório informado antes.|
+|at_hash|Um hash que representa o token recebido e deve ser usado para garantir a legitimidade do mesmo.|
+
+#### 3. Autenticação híbrida
+
+A autenticação híbrida é uma mistura do implícito e do código de autorização, recebendo assim alguns tokens direto na URL de callback e outros através da [requisição de Token](#requisicao_de_token).
+
+A requisição, assim como outros processos, também acontece da mesma forma que a [requisição de autorização por código de autorização](#requisicao_da_autenticacao), exceto que:
+
+|Parâmetro|Valor e descrição|
+|---|---|
+|response_type|Deve especificar o que será retornado diretamente, como:<br>`code id_token`, `code token`, `code id_token token`.|
+
+O tipo escolhido de resposta indicará o que irá retornar direto na URL de callback:
+
+|response_type|Descrição|
+|---|---|
+|code|Obrigatório. Irá sempre retornar o código de autorização.|
+|id_token|Retorna o token de ID para identificação do usuário.|
+|token|Retorna o token de acesso.|
+
+Os tokens que não são retornados diretamente, podem ser obtidos usando o code na [requisição de token](#requisicao_de_token).
 
 ### ID Token
 
@@ -677,6 +772,22 @@ Exemplo:
 }
 ```
 
+É recomendado que o token de logout expire no máximo em 2 minutos.
+
+###### Validação do token de logout
+
+Deve seguir os mesmos passos da [validação do ID Token](#validacao-do-id-token) e ainda:
+
+|Claim ou item|Validação|
+|---|---|
+|sid|Deve existir o identificador de sessão.|
+|events|Deve ter um atributo `http://schemas.openid.net/event/backchannel-logout`.|
+|nonce|**Não** deve existir.|
+|jti|Verificar se outro token com o mesmo ID único já não foi usado.|
+|iss|Comparar o emissor do token de Logout com o token de ID.|
+
+Em caso de erro, rejeitar e retornar uma resposta HTTP 400 - Bad Request.
+
 ###### Requisição de logout
 
 Uma requisição HTTP POST é enviada para o endereço cadastrado no registro do aplicativo com o body em `application/x-www-form-urlencoded`:
@@ -693,11 +804,12 @@ logout_token=eyJhbGci ... .eyJpc3Mi ... .T3BlbklE ...
 
 Algumas dicas e procedimentos para prevenir falhas de segurança e ataques maliciosos. [RFC6819](https://tools.ietf.org/html/rfc6819)
 
-- Rotacionar o código secreto do cliente de tempos em tempos (3 meses?).
+- Quando possível usar tokens criptografados.
 - Ao criar um token novo, salvar em algum lugar o `jti`, como uma instância Redis, que deve expirar assim que o token expira. Em toda requisição, validar se aquele `jti` ainda existe no Redis. Em caso de atividade suspeita, remover o `jti` do Redis, o que irá invalidar todas as requisições, mesmo com um token válido. _("Blacklist")_
 - O servidor deve usar SSL/TLS no mínimo na versão 1.2. _[Gerador de configuração da Mozilla](https://ssl-config.mozilla.org/#server=nginx&version=1.17.7&config=intermediate&openssl=1.1.1d&guideline=5.6)_
 - Detectar vazamentos de senhas e credenciais dos usuários em ferramentas como o [have i been pwned](https://haveibeenpwned.com/API/v3), inserindo todos os tokens na Blacklist, trocar a senha por outra aleatória, e enviar um e-mail de recuperação de senha.
 - Também verificar vazamentos de contas do próprio serviço/produto.
+- Rotacionar o código secreto do cliente de tempos em tempos (3 meses?).
 
 ## Fontes
 

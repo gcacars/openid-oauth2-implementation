@@ -4,6 +4,7 @@
   "description": "Sample of Authentication Server, OP and IdP",
   "main": "index.js",
   "scripts": {
+    "start": "node -r esm index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -22,6 +23,12 @@
   "author": "Gabriel Anderson",
   "license": "Apache-2.0",
   "dependencies": {
+    "esm": "^3.2.25",
     "oidc-provider": "^6.29.9"
+  },
+  "devDependencies": {
+    "eslint": "^7.16.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.22.1"
   }
 }
