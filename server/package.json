@@ -24,6 +24,9 @@
   "license": "Apache-2.0",
   "dependencies": {
     "esm": "^3.2.25",
+    "ioredis": "^4.19.4",
+    "jose": "^2.0.3",
+    "lowdb": "^1.0.0",
     "oidc-provider": "^6.29.9"
   },
   "devDependencies": {

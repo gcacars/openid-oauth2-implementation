@@ -36,14 +36,14 @@ Cada projeto, tem mais dois subprojetos:
 
 #### Estrutura de pastas
 
-|Caminho|Projeto|Descrição|
-|---|---|---|
-|./server|Servidor de autorização|O servidor da API do OpenID com OAuth 2.0|
-|./client|Servidor de autorização|As telas do servidor de autenticação, como login, troca de sessão...|
-|./admin/server|Painel administrativo|A API de configuração do servidor de autorização, para registro de clientes e ajuste de funcionalidades e segurança.|
-|./admin/server|Painel administrativo|As telas do painel de controle, com _feature toggle_ e relatórios.|
-|./app/server|Aplicação Exemplo|A API da aplicação de exemplo que usará os serviços de identidade do servidor de autenticação.|
-|./app/server|Aplicação Exemplo|As telas simples da aplicação de exemplo.|
+|Caminho|Projeto|Descrição|Porta|
+|---|---|---|---|
+|./server|Servidor de autorização|O servidor da API do OpenID com OAuth 2.0|3000|
+|./client|Servidor de autorização|As telas do servidor de autenticação, como login, troca de sessão...|8080|
+|./admin/server|Painel administrativo|A API de configuração do servidor de autorização, para registro de clientes e ajuste de funcionalidades e segurança.|1000|
+|./admin/server|Painel administrativo|As telas do painel de controle, com _feature toggle_ e relatórios.|1010|
+|./app/server|Aplicação Exemplo|A API da aplicação de exemplo que usará os serviços de identidade do servidor de autenticação.|7000|
+|./app/server|Aplicação Exemplo|As telas simples da aplicação de exemplo.|7070|
 
 Dessa forma obtemos um menor custo e com recursos totalmente gerenciados pela cloud.
 

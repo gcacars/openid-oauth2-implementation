@@ -1,10 +1,42 @@
 import { Provider } from 'oidc-provider';
+import { RedisAdapter } from './src/adapters/redis';
+import Account from './src/app/Account';
+import lowdb from './src/data/lowdb';
+import jwks from './src/jwks.json';
 
+const secureKeys = [
+  '5xhuqknssevprev03qivap4d4se4dx5xardk95y6enz7uru7eo',
+  '4pndhwz8dk57la2fqz0rdakseofsnzqbuz8a0vcwirjkpypcb7',
+];
+
+// Criar instância de conta.
+// Informamos uma instância de banco de dados.
+// Aqui usamos um simples "emulador" de banco de dados.
+const account = new Account(lowdb);
+
+/**
+ * @type import('oidc-provider').Configuration
+ */
 const configuration = {
-  // ... see the available options in Configuration options section
+  // Armazenamento persistente
+  // (usando uma instância grátis de dev na cloud: https://redislabs.com/try-free/)
+  adapter: RedisAdapter,
+
+  // Contas
+  findAccount: account.findAccount,
+
+  // Vamos informar as claims suportadas
+  claims: {
+    openid: ['sub'],
+    email: ['email', 'email_verified'],
+  },
+
+  // Configuração das funcionalidades
   features: {
+    devInteractions: { enabled: true },
     introspection: { enabled: true },
     revocation: { enabled: true },
+    encryption: { enabled: true },
   },
   formats: {
     AccessToken: 'jwt',
@@ -13,21 +45,18 @@ const configuration = {
     client_id: 'app',
     client_secret: 'bem-secreto',
     redirect_uris: ['http://localhost:8080/cb'],
+    // response_types: ['code', 'id_token token'],
+    grant_types: ['authorization_code', 'implicit'],
+    token_endpoint_auth_method: 'client_secret_basic',
     // + other client properties
   }],
   // ...
-  async findAccount(ctx, id) {
-    console.log(id, ctx);
-    return {
-      accountId: id,
-      async claims(use, scope) {
-        return { sub: id };
-      },
-    };
-  },
+  jwks,
 };
 
 const oidc = new Provider('http://localhost:3000', configuration);
+
+oidc.keys = secureKeys;
 
 // just expose a server standalone, see /examples/standalone.js
 const server = oidc.listen(3000, () => {
