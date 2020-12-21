@@ -4,6 +4,10 @@ import assert from 'assert';
 const dbClient = new WeakMap();
 
 class Account {
+  /**
+   * 
+   * @param {import('lowdb').LowdbSync} dbInstance instância do banco de dados
+   */
   constructor(dbInstance) {
     // Aqui é só um exemplo pra injetarmos a interface do banco de dados
     // que estamos utilizando.
@@ -12,25 +16,33 @@ class Account {
 
   // Esse método é obrigatório por oidc-provider
   async findAccount(ctx, id) {
-    // Isso deve ser algo que simplesmente verifica se a conta existe
-    const db = dbClient.get(this);
-    const account = db.get('users').find({ id }).value();
+    try {
+      // Isso deve ser algo que simplesmente verifica se a conta existe
+      /**
+       * @type {import('lowdb').LowdbSync}
+       */
+      const db = dbClient.get(this);
+      const account = db.get('users').find({ id }).value();
 
-    if (!account) {
+      if (!account) {
+        return undefined;
+      }
+
+      return {
+        accountId: id,
+        // e essas claims() deveria ser uma pesquisa para retornar as claims da conta
+        async claims() {
+          return {
+            sub: id,
+            email: account.email,
+            email_verified: account.email_verified,
+          };
+        },
+      };
+    } catch (err) {
+      console.error(err);
       return undefined;
     }
-
-    return {
-      accountId: id,
-      // e essas claims() deveria ser uma pesquisa para retornar as claims da conta
-      async claims() {
-        return {
-          sub: id,
-          email: account.email,
-          email_verified: account.email_verified,
-        };
-      },
-    };
   }
 
   // Isso pode ser qualquer coisa que precisar para autenticar um usuário
@@ -45,6 +57,7 @@ class Account {
 
       return account.id;
     } catch (err) {
+      console.error(err);
       return undefined;
     }
   }

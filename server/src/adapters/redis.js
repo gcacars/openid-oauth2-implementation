@@ -1,10 +1,12 @@
 // Original:
 // https://raw.githubusercontent.com/panva/node-oidc-provider/master/example/adapters/redis.js
-import Redis from 'ioredis';
+const Redis = require('ioredis');
 
 // const isEmpty = require('lodash/isEmpty');
 
 // "redis://:authpassword@redis-0000.c1.us-east1-2.gce.cloud.redislabs.com:13222/4"
+// eslint-disable-next-line no-console
+console.log(`Conectando no Redis em: ${process.env.REDIS_URL}`);
 const client = new Redis(process.env.REDIS_URL, {
   keyPrefix: 'oidc:',
 });

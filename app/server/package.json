@@ -1,38 +1,28 @@
 {
-  "name": "auth-server",
+  "name": "app-server",
   "version": "1.0.0",
-  "description": "Sample of Authentication Server, OP and IdP",
+  "description": "Aplicação de exemplo para o OpenID",
   "main": "index.js",
   "scripts": {
     "start": "nodemon -r esm index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "auth",
-    "authentication",
-    "authorization",
-    "identity",
-    "provider",
-    "server",
-    "OP",
-    "IdP",
-    "oauth2",
-    "oidc",
-    "openid"
+    "app",
+    "client",
+    "relying",
+    "party",
+    "aplicacao",
+    "cliente"
   ],
   "author": "Gabriel Anderson",
   "license": "Apache-2.0",
   "dependencies": {
-    "base64url": "^3.0.1",
+    "dpop": "^0.5.5",
     "esm": "^3.2.25",
-    "ioredis": "^4.19.4",
-    "jose": "^2.0.3",
-    "lowdb": "^1.0.0",
-    "nanoid": "^3.1.20",
-    "oidc-provider": "^6.29.9"
+    "nanoid": "^3.1.20"
   },
   "devDependencies": {
-    "@types/koa": "^2.11.6",
     "eslint": "^7.16.0",
     "eslint-config-airbnb-base": "^14.2.1",
     "eslint-plugin-import": "^2.22.1",

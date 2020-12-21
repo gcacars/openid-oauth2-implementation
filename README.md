@@ -41,9 +41,9 @@ Cada projeto, tem mais dois subprojetos:
 |./server|Servidor de autorização|O servidor da API do OpenID com OAuth 2.0|3000|
 |./client|Servidor de autorização|As telas do servidor de autenticação, como login, troca de sessão...|8080|
 |./admin/server|Painel administrativo|A API de configuração do servidor de autorização, para registro de clientes e ajuste de funcionalidades e segurança.|1000|
-|./admin/server|Painel administrativo|As telas do painel de controle, com _feature toggle_ e relatórios.|1010|
+|./admin/client|Painel administrativo|As telas do painel de controle, com _feature toggle_ e relatórios.|1010|
 |./app/server|Aplicação Exemplo|A API da aplicação de exemplo que usará os serviços de identidade do servidor de autenticação.|7000|
-|./app/server|Aplicação Exemplo|As telas simples da aplicação de exemplo.|7070|
+|./app/client|Aplicação Exemplo|As telas simples da aplicação de exemplo.|7070|
 
 Dessa forma obtemos um menor custo e com recursos totalmente gerenciados pela cloud.
 
@@ -69,3 +69,5 @@ Para poder usar as funcionalidades mais recentes, é utilizado o pacote `esm` pa
 Este é um repositório de um **estudo** sobre servidor de autenticação usando o OpenID.
 
 > Por favor não pegue o projeto e use em produção, pode haver falhas graves de segurança. Use apenas como uma base para algo maior, e saiba o que está fazendo - leia as especificações e documentações oficiais!
+
+Note que o código oferecido aqui é oferecido do jeito que está. Não há intenção de suportar outras tecnologias, ou mesmo mantê-lo atualizado e sem brechas de segurança. Use por sua conta e risco.
