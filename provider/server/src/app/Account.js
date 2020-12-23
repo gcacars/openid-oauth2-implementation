@@ -45,6 +45,23 @@ class Account {
     }
   }
 
+  async getAccountByLogin(login) {
+    let account;
+
+    try {
+      // Isso deve ser algo que simplesmente verifica se a conta existe
+      /**
+       * @type {import('lowdb').LowdbSync}
+       */
+      const db = dbClient.get(this);
+      account = db.get('users').find({ email: login }).value();
+    } catch (err) {
+      console.error(err);
+    }
+
+    return account;
+  }
+
   // Isso pode ser qualquer coisa que precisar para autenticar um usuário
   async authenticate(email, password) {
     try {

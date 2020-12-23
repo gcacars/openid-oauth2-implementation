@@ -5,7 +5,7 @@
         <div class="card border-0 shadow">
           <div class="card-body px-lg-4 py-lg-5">
             <div class="text-muted text-center mb-4">
-              <h4>Bem vindo</h4>
+              <h4>Bem vindo(a)</h4>
               Entre na sua conta
             </div>
             <form :action="action" method="post" autocomplete="off" role="form"
@@ -37,7 +37,8 @@
                   <small><a href="#">Esqueceu sua senha?</a></small>
                 </div>
                 <div class="form-check form-check-inline">
-                  <input class="form-check-input" type="checkbox" value="" id="lembrar">
+                  <input class="form-check-input" type="checkbox" value="1" id="lembrar"
+                         name="remember">
                   <label class="form-check-label" for="lembrar">
                     Mantenha-me conectado
                   </label>
@@ -98,8 +99,7 @@ export default {
         await this.verificar();
         this.verificando = false;
       } else if (this.senha.trim() === '' || this.senha.length < 8) {
-        // senha em branco
-        console.log('Senha em branco');
+        // FIX senha em branco
       } else {
         this.acessando = true;
       }
@@ -131,7 +131,7 @@ export default {
     }
 
     // Colocar URL
-    this.action = `${process.env.VUE_APP_PROVIDER_URL}/interaction/${this.$route.query.uid}/login`;
+    this.action = `${process.env.VUE_APP_PROVIDER_URL}/ui/${this.$route.query.uid}/login`;
   },
 };
 </script>

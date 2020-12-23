@@ -25,7 +25,8 @@ function makeHttpContext(controller) {
         params: ctx.params,
         query: ctx.request.query,
         headers: ctx.request.headers,
-      });
+        body: ctx.request.body,
+      }, ctx.req, ctx.res);
       const result = await controller(requestContext);
 
       // Devolver

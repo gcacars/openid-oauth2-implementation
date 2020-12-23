@@ -4,7 +4,9 @@ Estudos sobre a criação de um servidor de autenticação usando OpenID Connect
 
 [Leia mais sobre o estudo aqui.](OpenID.md)
 
-## Tecnologias
+## Detalhes técnicos
+
+### Tecnologias
 
 - node.js 14+ (servidor)
   - node oidc-provider
@@ -20,6 +22,33 @@ Estudos sobre a criação de um servidor de autenticação usando OpenID Connect
   - Babel
   - Bootstrap 5
   - Vue Router
+  
+### Montando ambiente de desenvolvimento
+
+1. É preciso instalar o [nginx](http://nginx.org/en/download.html)
+2. Executar o `npm install` em todos os projetos.
+3. Gerar todos os certificados para os domínios com SSL.
+
+    ```console
+    ./nginx/ssl/GerarCertificados.ps1
+    ```
+
+4. Isso irá gerar vários certificados na pasta `ssl`. Copie esta pasta e o arquivo de configuração `nginx.conf` para a pasta `/conf` da instalação do nginx.
+
+5. Altere o arquivo de hosts da sua máquina. (Windows `C:\System32\drivers\etc\hosts`) e adicione o conteúdo:
+
+    ```hosts
+    127.0.0.1 provider.dev.br
+    127.0.0.1 api.provider.dev.br
+    127.0.0.1 apprp.dev.br
+    127.0.0.1 api.apprp.dev.br
+    127.0.0.1 admin-op.dev.br
+    127.0.0.1 api.admin-op.dev.br
+    127.0.0.1 account-admin.dev.br
+    127.0.0.1 api.account-admin.dev.br
+    ```
+
+6. Executar o nginx: `./nginx.exe`.
 
 ## Arquitetura
 

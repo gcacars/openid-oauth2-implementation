@@ -13,17 +13,20 @@ class HttpContext {
    * @property {Object} query Query Strings presentes na requisição (ex: `?qsA=1,qsB=2`)
    * @property {Object} params Glossário de parâmetros definidos no caminho da rota (ex: `user/:id`)
    * @property {Object} headers Método HTTP da requisição
+   * @property {Object} body Dados do corpo da requisição
    */
 
   /**
    * Creates an instance of HttpContext.
    * @author Gabriel Anderson
    * @param {Request} request A requisição HTTP
+   * @param {import('koa').Request} req A requisição original
+   * @param {import('koa').Response} res Referência da resposta para a requisição
    * @memberof HttpContext
    */
   constructor({
-    method, ip, path, query, params, headers,
-  }) {
+    method, ip, path, query, params, headers, body,
+  }, req, res) {
     this.request = {
       method,
       ip,
@@ -31,7 +34,10 @@ class HttpContext {
       query,
       params,
       headers,
+      body,
     };
+    this.originalRequest = req;
+    this.originalResponse = res;
   }
 
   /**

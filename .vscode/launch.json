@@ -11,16 +11,18 @@
       "cwd": "${workspaceFolder}\\provider\\server",
       "runtimeExecutable": "node",
       "args": [
+        "--preserve-symlinks",
         "-r",
         "esm",
-        "./server.js",
+        "./index.js",
         "--inspect"
       ],
       "outputCapture": "std",
       "skipFiles": [
         "<node_internals>/**"
       ],
-      "envFile": "${workspaceFolder}/.env"
+      "envFile": "${workspaceFolder}/.env",
+      "trace": true
     },
     {
       "type": "pwa-node",

@@ -10,6 +10,7 @@ import base64url from 'base64url';
 import Account from './src/app/Account';
 import lowdb from './src/data/lowdb';
 import jwks from './src/jwks.json';
+import Routes from './src/routes';
 
 // Gerar uma chave aleatória para proteger os JWTs
 const secureKeys = [
@@ -35,7 +36,7 @@ const configuration = {
   // adapter: RedisAdapter,
 
   // Contas
-  findAccount: account.findAccount,
+  findAccount: account.findAccount.bind(account),
 
   // Vamos informar as claims suportadas para cada escopo
   claims: {
@@ -178,15 +179,20 @@ const configuration = {
   // Não permitir que o ID Token contenha dados/claims do usuário.
   conformIdTokenClaims: true,
 
-  // Chaves de assinatura dos cookies para evitar adulteração. (deve ser rotacionado)
+  // Configurações de cookies
+  // (demorei 12 horas para configurar, tenha certeza que sabe o que está fazendo!)
   cookies: {
+    // Chaves de assinatura dos cookies para evitar adulteração. (deve ser rotacionado)
     keys: secureKeys,
     // Configurações de token de curto prazo
     short: {
       httpOnly: true,
       maxAge: 10 * 60 * 1000, // 10 minutos
       signed: true,
-      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'none',
+      secure: true,
+      domain: 'provider.dev.br',
+      path: '/',
     },
     // Configurações de token de longo prazo
     long: {
@@ -194,7 +200,9 @@ const configuration = {
       maxAge: 14 * 24 * 60 * 60 * 1000, // 14 dias
       signed: true,
       sameSite: 'none',
-      secure: process.env.NODE_ENV === 'production',
+      secure: true,
+      domain: 'provider.dev.br',
+      path: '/',
     },
     // Nomes dos cookies
     names: {
@@ -281,8 +289,7 @@ const configuration = {
   // Interface UI
   interactions: {
     url(ctx, itx) {
-      console.log(itx, 'INTERAÇÃO');
-      return `http://localhost:8080/${itx.prompt.name}?uid=${itx.uid}&login_hint=${itx.params.login_hint}`;
+      return `https://provider.dev.br/${itx.prompt.name}?uid=${itx.uid}&login_hint=${itx.params.login_hint}`;
     },
   },
 
@@ -565,23 +572,23 @@ const configuration = {
   clients: [{
     // Apresentação
     client_name: 'Aplicação Exemplo',
-    logo_uri: 'https://client-app:7070/logo.png',
-    policy_uri: 'https://client-app:7070/politica-privacidade',
-    tos_uri: 'https://client-app:7070/termos-servico',
+    logo_uri: 'https://apprp.dev.br/logo.png',
+    policy_uri: 'https://apprp.dev.br/politica-privacidade',
+    tos_uri: 'https://apprp.dev.br/termos-servico',
 
     // Configurações do cliente
     application_type: 'web',
     client_id: 'app',
     client_secret: 'bem-secreto',
-    client_uri: 'https://client-app:7070/',
+    client_uri: 'https://apprp.dev.br/',
     redirect_uris: [
-      'https://client-app:7070/',
-      'https://client-app:7070/cb',
-      'https://client-app:7070/pre-tela',
+      'https://apprp.dev.br/',
+      'https://apprp.dev.br/cb',
+      'https://apprp.dev.br/pre-tela',
     ],
-    // initiate_login_uri: 'https://client-app:7070/pre-tela',
+    // initiate_login_uri: 'https://apprp.dev.br/pre-tela',
     // post_logout_redirect_uris: [],
-    sector_identifier_uri: 'https://client-app:7070/',
+    sector_identifier_uri: 'https://apprp.dev.br/',
     // subject_type: 'public',
 
     // Configurações do OpenID ou OAuth
@@ -617,22 +624,21 @@ function handleClientAuthErrors({ headers: { authorization }, oidc: { body, clie
   }
 }
 
-const oidc = new Provider('http://localhost:3000', configuration);
+const oidc = new Provider('https://api.provider.dev.br', configuration);
 
 oidc.keys = secureKeys;
 oidc.proxy = true;
-oidc.use(helmet);
+// oidc.use(helmet);
 oidc.on('grant.error', handleClientAuthErrors);
 oidc.on('introspection.error', handleClientAuthErrors);
 oidc.on('revocation.error', handleClientAuthErrors);
 
 // Configurar o Koa
 const app = new Koa();
-app.use(helmet);
+app.proxy = true;
+// app.use(helmet);
 
 if (process.env.NODE_ENV === 'production') {
-  // app.proxy = true;
-
   app.use(async (ctx, next) => {
     if (ctx.secure) {
       await next();
@@ -648,11 +654,12 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-// app.use(routes(oidc).routes());
+// eslint-disable-next-line no-new
+new Routes(app, oidc, lowdb);
 app.use(KoaMount(oidc.app));
 
 // Iniciar servidor
 const server = app.listen(3000, () => {
-  console.log('oidc-provider está pronto, verifique http://localhost:3000/.well-known/openid-configuration');
-  console.log('Inicie o login em: http://localhost:3000/auth?response_type=code&scope=openid%20email&client_id=app&login_hint=manoel@exemplo.com.br&redirect_uri=https://client-app:7070/cb&state=af0ifjsldkj');
+  console.log('oidc-provider está pronto, verifique https://api.provider.dev.br/.well-known/openid-configuration');
+  console.log('Inicie o login em: https://api.provider.dev.br/auth?response_type=code&scope=openid%20email&client_id=app&login_hint=manoel@exemplo.com.br&redirect_uri=https://apprp.dev.br/cb&state=af0ifjsldkj');
 });

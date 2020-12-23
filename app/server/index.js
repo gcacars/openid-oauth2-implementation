@@ -27,9 +27,9 @@ https.createServer({
   const state = nanoid();
 
   res.end(`<br><br>
-    <a href="http://localhost:3000/auth?response_type=code&scope=openid%20email&client_id=app&login_hint=manoel@exemplo.com.br&redirect_uri=https://client-app:7070/cb&state=${state}">
+    <a href="http://api.provider.dev.br/auth?response_type=code&scope=openid%20email&client_id=app&login_hint=manoel@exemplo.com.br&redirect_uri=https://apprp.dev.br/cb&state=${state}">
       Fazer login
     </a><br>
-    <a href="http://localhost:3000/session/end">Fazer logout</a>
+    <a href="http://api.provider.dev.br/session/end">Fazer logout</a>
   `);
-}).listen(7070);
+}).listen(7000);
