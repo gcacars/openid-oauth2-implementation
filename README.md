@@ -6,8 +6,9 @@ Estudos sobre a criação de um servidor de autenticação usando OpenID Connect
 
 ## Tecnologias
 
-- node.js (servidor)
+- node.js 14+ (servidor)
   - node oidc-provider
+  - Koa
   - OpenID Connect:
     - Core
     - Discovery
@@ -15,37 +16,45 @@ Estudos sobre a criação de um servidor de autenticação usando OpenID Connect
     - Back-Channel Logout
     - Session Management
     - FAPI (Operações financeiras e Open banking)
-- Vue.js (telas)
+- Vue.js 3 Preview (telas)
+  - Babel
+  - Bootstrap 5
+  - Vue Router
 
 ## Arquitetura
 
 ### Projetos
 
-Esta solução tem 3 projetos:
+Esta solução tem 4 projetos:
 
-- Servidor de autorização (OP/IdP)
+- Servidor de autorização (Authorization Server / OpenID Provider)
+- Provedor de identidade (Identity Provider - IdP)
 - Painel administrativo
 - Aplicação de exemplo
 
 ### Design
 
-Cada projeto, tem mais dois subprojetos:
+Cada projeto, pode ter dois subprojetos:
 
-- Server: um back-end que expõe uma API em node.js
+- Server: um back-end (clean code e clean architecture) que expõe uma API em node.js
 - Client: telas que consomem a API em SPA (Single Page Application) com Vue.js
 
 #### Estrutura de pastas
 
 |Caminho|Projeto|Descrição|Porta|
 |---|---|---|---|
-|./server|Servidor de autorização|O servidor da API do OpenID com OAuth 2.0|3000|
-|./client|Servidor de autorização|As telas do servidor de autenticação, como login, troca de sessão...|8080|
+|./provider/server|Servidor de autorização|O servidor da API do provedor OpenID com OAuth 2.0|3000|
+|./provider/client|Servidor de autorização|As telas do servidor de autenticação, como login, troca de sessão...|8080|
 |./admin/server|Painel administrativo|A API de configuração do servidor de autorização, para registro de clientes e ajuste de funcionalidades e segurança.|1000|
 |./admin/client|Painel administrativo|As telas do painel de controle, com _feature toggle_ e relatórios.|1010|
+|./account/server|Provedor de identidade|API para recuperar contas, usuários, fotos, e outros dados.|6000|
+|./account/client|Provedor de identidade|Telas do painel administrativo para gerenciar as contas, cadastros, dados...|6060|
 |./app/server|Aplicação Exemplo|A API da aplicação de exemplo que usará os serviços de identidade do servidor de autenticação.|7000|
 |./app/client|Aplicação Exemplo|As telas simples da aplicação de exemplo.|7070|
 
 Dessa forma obtemos um menor custo e com recursos totalmente gerenciados pela cloud.
+
+Repare que para rodar o Painel administrativo e a Aplicação Exemplo, o Servidor de autorização precisa estar rodando ao mesmo tempo.
 
 ### Distribuição
 

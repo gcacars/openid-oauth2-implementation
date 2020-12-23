@@ -27,6 +27,11 @@
     "esm": "^3.2.25",
     "ioredis": "^4.19.4",
     "jose": "^2.0.3",
+    "koa": "^2.13.0",
+    "koa-body": "^4.2.0",
+    "koa-helmet": "^6.0.0",
+    "koa-mount": "^4.0.0",
+    "koa-router": "^10.0.0",
     "lowdb": "^1.0.0",
     "nanoid": "^3.1.20",
     "oidc-provider": "^6.29.9"

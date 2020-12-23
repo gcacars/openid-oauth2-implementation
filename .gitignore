@@ -1,5 +1,6 @@
-# OpenID
+# Projeto
 jwks.json
+*.pem
 
 # Logs
 logs

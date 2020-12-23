@@ -1,5 +1,8 @@
 /* eslint-disable no-param-reassign */
 import crypto from 'crypto';
+import Koa from 'koa';
+import KoaHelmet from 'koa-helmet';
+import KoaMount from 'koa-mount';
 import { Provider } from 'oidc-provider';
 import { nanoid } from 'nanoid';
 import base64url from 'base64url';
@@ -50,7 +53,7 @@ const configuration = {
   // Configuração das funcionalidades
   features: {
     // Interação (telas)
-    devInteractions: { enabled: true },
+    devInteractions: { enabled: false },
     // Funcionalidades
     backchannelLogout: { enabled: true },
     frontchannelLogout: { enabled: true },
@@ -183,6 +186,7 @@ const configuration = {
       httpOnly: true,
       maxAge: 10 * 60 * 1000, // 10 minutos
       signed: true,
+      secure: process.env.NODE_ENV === 'production',
     },
     // Configurações de token de longo prazo
     long: {
@@ -190,6 +194,7 @@ const configuration = {
       maxAge: 14 * 24 * 60 * 60 * 1000, // 14 dias
       signed: true,
       sameSite: 'none',
+      secure: process.env.NODE_ENV === 'production',
     },
     // Nomes dos cookies
     names: {
@@ -275,9 +280,9 @@ const configuration = {
 
   // Interface UI
   interactions: {
-    url(ctx, interaction) {
-      console.log(interaction, 'INTERAÇÃO');
-      return `/interaction/${ctx.oidc.uid}`;
+    url(ctx, itx) {
+      console.log(itx, 'INTERAÇÃO');
+      return `http://localhost:8080/${itx.prompt.name}?uid=${itx.uid}&login_hint=${itx.params.login_hint}`;
     },
   },
 
@@ -601,6 +606,9 @@ const configuration = {
   }],
 };
 
+// Segurança
+const helmet = KoaHelmet();
+
 function handleClientAuthErrors({ headers: { authorization }, oidc: { body, client } }, err) {
   if (err.statusCode === 401 && err.message === 'invalid_client') {
     console.log(err, 'client');
@@ -613,14 +621,38 @@ const oidc = new Provider('http://localhost:3000', configuration);
 
 oidc.keys = secureKeys;
 oidc.proxy = true;
+oidc.use(helmet);
 oidc.on('grant.error', handleClientAuthErrors);
 oidc.on('introspection.error', handleClientAuthErrors);
 oidc.on('revocation.error', handleClientAuthErrors);
 
-// const server = https.createServer({ key, cert }, oidc.callback);
+// Configurar o Koa
+const app = new Koa();
+app.use(helmet);
 
-// just expose a server standalone, see /examples/standalone.js
-const server2 = oidc.listen(3000, () => {
+if (process.env.NODE_ENV === 'production') {
+  // app.proxy = true;
+
+  app.use(async (ctx, next) => {
+    if (ctx.secure) {
+      await next();
+    } else if (ctx.method === 'GET' || ctx.method === 'HEAD') {
+      ctx.redirect(ctx.href.replace(/^http:\/\//i, 'https://'));
+    } else {
+      ctx.body = {
+        error: 'invalid_request',
+        error_description: 'do yourself a favor and only use https',
+      };
+      ctx.status = 400;
+    }
+  });
+}
+
+// app.use(routes(oidc).routes());
+app.use(KoaMount(oidc.app));
+
+// Iniciar servidor
+const server = app.listen(3000, () => {
   console.log('oidc-provider está pronto, verifique http://localhost:3000/.well-known/openid-configuration');
   console.log('Inicie o login em: http://localhost:3000/auth?response_type=code&scope=openid%20email&client_id=app&login_hint=manoel@exemplo.com.br&redirect_uri=https://client-app:7070/cb&state=af0ifjsldkj');
 });

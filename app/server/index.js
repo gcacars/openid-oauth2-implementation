@@ -3,9 +3,14 @@ import https from 'https';
 import { nanoid } from 'nanoid';
 
 // Pegar o certificado para criar o https
+if (!fs.existsSync('./key.pem')) {
+  console.error('Crie uma nova chave e certificado conforme descrito no README.md');
+}
+
 const key = fs.readFileSync('./key.pem');
 const cert = fs.readFileSync('./cert.pem');
 
+// Iniciar servidor com HTTPS
 https.createServer({
   key,
   cert,
