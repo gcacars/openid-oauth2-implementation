@@ -31,12 +31,12 @@ class Routes {
   configureUserInterface(db) {
     const provider = providerRef.get(this);
     const router = new UIRouter(provider, { prefix: '/ui' }, db);
-    router.get('/:uid');
+    router.get('/:uid', router.details());
     router.get('/cb/google');
     router.post('/:uid/login', bodyParser, router.login());
     router.post('/:uid/federated');
     router.post('/:uid/continue');
-    router.post('/:uid/confirm');
+    router.post('/:uid/confirm', bodyParser, router.confirm());
     router.post('/:uid/abort', router.abort());
     return router;
   }

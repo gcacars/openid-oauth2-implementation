@@ -22,7 +22,7 @@ class Account {
        * @type {import('lowdb').LowdbSync}
        */
       const db = dbClient.get(this);
-      const account = db.get('users').find({ id }).value();
+      const account = db.get('users').find({ _id: id }).value();
 
       if (!account) {
         return undefined;
@@ -34,6 +34,7 @@ class Account {
         async claims() {
           return {
             sub: id,
+            picture: account.picture_url,
             email: account.email,
             email_verified: account.email_verified,
           };

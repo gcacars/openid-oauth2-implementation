@@ -1,6 +1,7 @@
 /* eslint-disable no-param-reassign */
 import crypto from 'crypto';
 import Koa from 'koa';
+import KoaCors from '@koa/cors';
 import KoaHelmet from 'koa-helmet';
 import KoaMount from 'koa-mount';
 import { Provider } from 'oidc-provider';
@@ -171,7 +172,10 @@ const configuration = {
   },
 
   // Validar o CORS de uma requisição de um cliente
-  clientBasedCORS: (ctx, origin, client) => true,
+  clientBasedCORS(ctx, origin, client) {
+    console.log(origin);
+    return true;
+  },
 
   // Segundos de tolerância para tokens, objetos de requisição e DPoP
   clockTolerance: 30,
@@ -581,7 +585,7 @@ const configuration = {
   clients: [{
     // Apresentação
     client_name: 'Aplicação Exemplo',
-    logo_uri: 'https://apprp.dev.br/logo.png',
+    logo_uri: 'https://placeholder.com/wp-content/uploads/2018/10/placeholder.com-logo3.png',
     policy_uri: 'https://apprp.dev.br/politica-privacidade',
     tos_uri: 'https://apprp.dev.br/termos-servico',
 
@@ -646,6 +650,10 @@ oidc.on('revocation.error', handleClientAuthErrors);
 const app = new Koa();
 app.proxy = true;
 // app.use(helmet);
+app.use(KoaCors({
+  origin: 'https://provider.dev.br',
+  credentials: true,
+}));
 
 if (process.env.NODE_ENV === 'production') {
   app.use(async (ctx, next) => {

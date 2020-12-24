@@ -1,5 +1,6 @@
 import { createApp } from 'vue';
-// import bootstrap from 'bootstrap';
+import '@popperjs/core';
+import 'bootstrap';
 import './styles/custom.scss';
 import './styles/style.scss';
 

@@ -9,7 +9,7 @@
       "request": "launch",
       "name": "OpenID Provider (Auth Server)",
       "cwd": "${workspaceFolder}\\provider\\server",
-      "runtimeExecutable": "node",
+      "runtimeExecutable": "nodemon",
       "args": [
         "--preserve-symlinks",
         "-r",

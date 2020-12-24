@@ -25,8 +25,13 @@ class UIRouter extends Router {
   constructor(provider, opts, db) {
     super(opts);
     const account = new Account(db);
-    const controller = new UIController(provider, account);
+    const controller = new UIController(provider, account, db);
     controllerRef.set(this, controller);
+  }
+
+  details() {
+    const controller = controllerRef.get(this);
+    return httpKoaContext(controller.details.bind(controller));
   }
 
   login() {
@@ -34,9 +39,14 @@ class UIRouter extends Router {
     return httpKoaContext(controller.login.bind(controller));
   }
 
+  confirm() {
+    const controller = controllerRef.get(this);
+    return httpKoaContext(controller.confirm.bind(controller));
+  }
+
   abort() {
     const controller = controllerRef.get(this);
-    return httpKoaContext(controller.abort);
+    return httpKoaContext(controller.abort.bind(controller));
   }
 }
 

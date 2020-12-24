@@ -96,17 +96,17 @@ Location: https://server.example.com/authorize?
 
 |Parâmetro|Valor e descrição|
 |---|---|
-|response_type|`code`|
-|scope|`openid`|
-|client_id|_Código da aplicação requisitando um token._|
-|redirect_uri|_Deve ser `https`._<br>_Deve estar registrado no IdP._|
-|state|_Evita CSRF e XSRF._<br>_Pode ser o hash de um cookie do navegador no cliente._|
-|nonce|_Deve ser um hash relacionado à sessão (pode ser baseado em cookie HttpOnly com um valor aleatório._|
-|prompt|_Lista separada por espaço de como o IdP pergunta pro usuário sobre consentimento ou re-autenticação._<br>`none` não faz nada (usado pra checar se tem permissões e sessão)<br>`login` (só mostra tela de autenticação)<br>`consent` (só pede consentimento)<br>`select_account` (pede para o usuário escolher uma das contas ativas)|
-|max_age|Tempo máximo em segundos em que um usuário é considerado autenticado.<br>Quando esse tempo termina, uma requisição nova no endpoint de autorização, irá pedir que o usuário se autentique novamente).|
-|ui_locales|Lista separada por espaço e em ordem de preferência dos idiomas para a tela de login. Ex: `pt-BR pt en`
-|id_token_hint|Envia um token previamente emitido pelo IdP. Retorna sucesso quando já está autenticado, ou um erro caso contrário.<br>Deve ser usado quando o `prompt=none` é informado.<br>O próprio IdP tem que estar como audiência `aud` do token.|
-|login_hint|Informa um endereço de `e-mail` ou `telefone` que será preenchido automaticamente na tela de login.|
+|`response_type`|`code`|
+|`scope`|`openid`|
+|`client_id`|_Código da aplicação requisitando um token._|
+|`redirect_uri`|_Deve ser `https`._<br>_Deve estar registrado no IdP._|
+|`state`|_Evita CSRF e XSRF._<br>_Pode ser o hash de um cookie do navegador no cliente._|
+|`nonce`|_Deve ser um hash relacionado à sessão (pode ser baseado em cookie HttpOnly com um valor aleatório._|
+|`prompt`|_Lista separada por espaço de como o IdP pergunta pro usuário sobre consentimento ou re-autenticação._<br>`none` não faz nada (usado pra checar se tem permissões e sessão)<br>`login` (só mostra tela de autenticação)<br>`consent` (só pede consentimento)<br>`select_account` (pede para o usuário escolher uma das contas ativas)|
+|`max_age`|Tempo máximo em segundos em que um usuário é considerado autenticado.<br>Quando esse tempo termina, uma requisição nova no endpoint de autorização, irá pedir que o usuário se autentique novamente).|
+|`ui_locales`|Lista separada por espaço e em ordem de preferência dos idiomas para a tela de login. Ex: `pt-BR pt en`
+|`id_token_hint`|Envia um token previamente emitido pelo IdP. Retorna sucesso quando já está autenticado, ou um erro caso contrário.<br>Deve ser usado quando o `prompt=none` é informado.<br>O próprio IdP tem que estar como audiência `aud` do token.|
+|`login_hint`|Informa um endereço de `e-mail` ou `telefone` que será preenchido automaticamente na tela de login.|
 
 ##### Erros de Autenticação
 
@@ -120,15 +120,15 @@ Location: https://client.example.org/cb?
 
 |Erro|Descrição|
 |---|---|
-|interaction_required|Quando `prompt=true` porém é preciso exibir uma tela.|
-|login_required|Quando `prompt=true` porém é preciso exibir a tela de login.|
-|account_selection_required|Quando `prompt=true` porém é preciso exibir a tela para selecionar a sessão.|
-|consent_required|Quando `prompt=true` porém é preciso exibir a tela de consentimento.|
-|invalid_request_uri|Quando `request_uri` está inválido.|
-|invalid_request_object|Algo na requisição é inválido.|
-|request_not_supported|Não suporta a requisição informada.|
-|request_uri_not_supported|Não suporta o `request_uri` informado.|
-|registration_not_supported|Não suporta o `registration` informado.|
+|`interaction_required`|Quando `prompt=true` porém é preciso exibir uma tela.|
+|`login_required`|Quando `prompt=true` porém é preciso exibir a tela de login.|
+|`account_selection_required`|Quando `prompt=true` porém é preciso exibir a tela para selecionar a sessão.|
+|`consent_required`|Quando `prompt=true` porém é preciso exibir a tela de consentimento.|
+|`invalid_request_uri`|Quando `request_uri` está inválido.|
+|`invalid_request_object`|Algo na requisição é inválido.|
+|`request_not_supported`|Não suporta a requisição informada.|
+|`request_uri_not_supported`|Não suporta o `request_uri` informado.|
+|`registration_not_supported`|Não suporta o `registration` informado.|
 
 ##### Validação da resposta da Autenticação
 
@@ -141,8 +141,8 @@ Location: https://client.example.org/cb?
 
 |Item|Validação|
 |---|---|
-|code|Obrigatório.|
-|state|Obrigatório se foi informado na requisição.<br>Deve ser idêntico ao informado antes.|
+|`code`|Obrigatório.|
+|`state`|Obrigatório se foi informado na requisição.<br>Deve ser idêntico ao informado antes.|
 
 ##### Requisição de Token
 
@@ -158,10 +158,10 @@ grant_type=authorization_code&code=SplxlOBeZQQYbYS6WxSbIA
 
 |Parâmetro|Valor e descrição|
 |---|---|
-|grant_type|`authorization_code`|
-|code|O código recebido na requisição de Autenticação.|
-|redirect_uri|A URL que será redirecionado após o login.<br>Note que essa URL precisa ser idêntica a informada na requisição de Autenticação.|
-|client_id|O identificador do cliente (aplicação).|
+|`grant_type`|`authorization_code`|
+|`code`|O código recebido na requisição de Autenticação.|
+|`redirect_uri`|A URL que será redirecionado após o login.<br>Note que essa URL precisa ser idêntica a informada na requisição de Autenticação.|
+|`client_id`|O identificador do cliente (aplicação).|
 
 ##### Erro na requisição do Token
 
@@ -195,12 +195,12 @@ Pragma: no-cache
 
 |Item|Validação|
 |---|---|
-|access_token|Deve existir.|
-|token_type|Deve ser `Bearer`.|
-|id_token|Deve existir e validar conforme [descrito abaixo](#validacao-do-id-token).|
-|expires_in|Segundos em que o token irá expirar após a requisição.|
-|refresh_token|Token que pode ser usado para renovar o atual após a expiração.|
-|scope|Deve existir se foi informado na requisição, e deverá ser idêntico.|
+|`access_token`|Deve existir.|
+|`token_type`|Deve ser `Bearer`.|
+|`id_token`|Deve existir e validar conforme [descrito abaixo](#validacao-do-id-token).|
+|`expires_in`|Segundos em que o token irá expirar após a requisição.|
+|`refresh_token`|Token que pode ser usado para renovar o atual após a expiração.|
+|`scope`|Deve existir se foi informado na requisição, e deverá ser idêntico.|
 
 #### 2. Implícito
 
@@ -213,18 +213,18 @@ A requisição de autenticação implícita, acontece da mesma forma que a [requ
 
 |Parâmetro|Valor e descrição|
 |---|---|
-|response_type|Deve ser `id_token token`.|
-|nonce|Se torna obrigatório ser informado.|
+|`response_type`|Deve ser `id_token token`.|
+|`nonce`|Se torna obrigatório ser informado.|
 
 A validação e outros processos ocorrem da mesma forma que a [requisição de autorização por código de autorização](#requisicao_da_autenticacao), porém ao obter uma resposta, no redirecionamento de volta para a aplicação é enviados todos os parâmetros direto na URL:
 
 |Parâmetro|Descrição|
 |---|---|
-|access_token|O token de acesso.|
-|token_type|O tipo do token obtido. Sempre `Bearer`.|
-|id_token|O token de ID.|
-|state|O valor de estado informado na requisição.|
-|expires_in|Segundos em que o token irá expirar.|
+|`access_token`|O token de acesso.|
+|`token_type`|O tipo do token obtido. Sempre `Bearer`.|
+|`id_token`|O token de ID.|
+|`state`|O valor de estado informado na requisição.|
+|`expires_in`|Segundos em que o token irá expirar.|
 
 Por exemplo:
 
@@ -281,8 +281,8 @@ Esses parâmetros adicionais estarão presentes no ID Token recebido:
 
 |Claim|Descrição|
 |---|---|
-|nonce|O número aleatório informado antes.|
-|at_hash|Um hash que representa o token recebido e deve ser usado para garantir a legitimidade do mesmo.|
+|`nonce`|O número aleatório informado antes.|
+|`at_hash`|Um hash que representa o token recebido e deve ser usado para garantir a legitimidade do mesmo.|
 
 #### 3. Autenticação híbrida
 
@@ -292,15 +292,15 @@ A requisição, assim como outros processos, também acontece da mesma forma que
 
 |Parâmetro|Valor e descrição|
 |---|---|
-|response_type|Deve especificar o que será retornado diretamente, como:<br>`code id_token`, `code token`, `code id_token token`.|
+|`response_type`|Deve especificar o que será retornado diretamente, como:<br>`code id_token`, `code token`, `code id_token token`.|
 
 O tipo escolhido de resposta indicará o que irá retornar direto na URL de callback:
 
-|response_type|Descrição|
+|Tipo de resposta|Descrição|
 |---|---|
-|code|Obrigatório. Irá sempre retornar o código de autorização.|
-|id_token|Retorna o token de ID para identificação do usuário.|
-|token|Retorna o token de acesso.|
+|`code`|Obrigatório. Irá sempre retornar o código de autorização.|
+|`id_token`|Retorna o token de ID para identificação do usuário.|
+|`token`|Retorna o token de acesso.|
 
 Os tokens que não são retornados diretamente, podem ser obtidos usando o code na [requisição de token](#requisicao_de_token).
 
@@ -311,16 +311,16 @@ Os tokens que não são retornados diretamente, podem ser obtidos usando o code 
 |#|Item|Validação|
 |-|---|---|
 |1|_criptografado_|Se o cliente especificou uma criptografia no seu registro.<br>Se foi solicitado um token criptografado e veio um sem, deve ser rejeitado.|
-|2|iss|O claim de emissor deve bater exatamente com o identificador do IdP, ou seja, a URL que foi chamada para autenticar, ou do serviço de descoberta.|
-|3|aud|A claim de audiência deve conter o `client_id`, e na sua ausência deve ser rejeitado.<br>Se a lista de audiência conter outros destinos que o cliente não confia, também deve rejeitar.|
-|4|azp|Deve existir se o token tem várias audiências/públicos.<br>Se existir deve verificar que seu `client_id` é um valor de Claim.|
+|2|`iss`|O claim de emissor deve bater exatamente com o identificador do IdP, ou seja, a URL que foi chamada para autenticar, ou do serviço de descoberta.|
+|3|`aud`|A claim de audiência deve conter o `client_id`, e na sua ausência deve ser rejeitado.<br>Se a lista de audiência conter outros destinos que o cliente não confia, também deve rejeitar.|
+|4|`azp`|Deve existir se o token tem várias audiências/públicos.<br>Se existir deve verificar que seu `client_id` é um valor de Claim.|
 |5|_TLS_|No fluxo de **Authorization Code** pode validar o TLS do servidor do IdP.|
-|6|alg|O valor deve ser `RS256` ou o valor informado no registro pelo cliente em `id_token_signed_response_alg`.|
-|7|exp|A data atual deve ser anterior à data de expiração do token.|
-|8|iat|A data do claim `iat` pode ser usada para rejeitar tokens emitidos há muito tempo.|
-|9|nonce|Se o valor do nonce foi enviado na requisição de Autenticação, então o valor deve ser exatamente o mesmo no token.|
-|10|acr|Se o `acr` foi informado na requisição, deve-se checar se o valor é apropriado.|
-|11|auth_time|Se o `auth_time` foi informado na requisição, ou o `max_age` então esta claim deve ser validada.<br>Deve ser solicitada uma nova autenticação se muito tempo se passou desde a última autenticação do usuário.|
+|6|`alg`|O valor deve ser `RS256` ou o valor informado no registro pelo cliente em `id_token_signed_response_alg`.|
+|7|`exp`|A data atual deve ser anterior à data de expiração do token.|
+|8|`iat`|A data do claim `iat` pode ser usada para rejeitar tokens emitidos há muito tempo.|
+|9|`nonce`|Se o valor do nonce foi enviado na requisição de Autenticação, então o valor deve ser exatamente o mesmo no token.|
+|10|`acr`|Se o `acr` foi informado na requisição, deve-se checar se o valor é apropriado.|
+|11|`auth_time`|Se o `auth_time` foi informado na requisição, ou o `max_age` então esta claim deve ser validada.<br>Deve ser solicitada uma nova autenticação se muito tempo se passou desde a última autenticação do usuário.|
 
 #### JWT, JWE, JWS e JWTs aninhados
 
@@ -356,43 +356,43 @@ Alguns são padrões e estão definidos na [RFC7519](https://tools.ietf.org/html
 
 |Membro|Tipo|Descrição
 |---|---|---|
-|aud|texto ou lista|Deve conter pelo menos o `client_id` do destino.|
-|exp|número|O timestamp (segundos desde 1970) de quando o token irá expirar.|
-|auth_time|número|Timestamp do momento em que o usuário foi autenticado.<br>Presente quando o cliente solicitou `require_auth_time`.|
-|nonce|texto|Um valor informado na requisição para validar o uso do token na sessão.|
-|amr|lista|Lista de identificadores de métodos de autenticação usados para autenticar o usuário. [Ver lista abaixo](#referencia_de_metodos_de_autenticacao)|
+|`aud`|texto ou lista|Deve conter pelo menos o `client_id` do destino.|
+|`exp`|número|O timestamp (segundos desde 1970) de quando o token irá expirar.|
+|`auth_time`|número|Timestamp do momento em que o usuário foi autenticado.<br>Presente quando o cliente solicitou `require_auth_time`.|
+|`nonce`|texto|Um valor informado na requisição para validar o uso do token na sessão.|
+|`amr`|lista|Lista de identificadores de métodos de autenticação usados para autenticar o usuário. [Ver lista abaixo](#referencia_de_metodos_de_autenticacao)|
 
 #### Atributos de usuário
 
 |Membro|Tipo|Descrição
 |---|---|---|
-|sub|texto|Identificador único (no emissor) do usuário.|
-|name|texto|Nome completo do usuário.|
-|given_name|texto|Primeiro nome do usuário.|
-|family_name|texto|Sobrenome do usuário.|
-|middle_name|texto|Nome do meio do usuário (se existir).|
-|nickname|texto|Nome casual do usuário, ou como prefere ser chamado. _ex.: `Gabs`_|
-|preferred_username|texto|Nome curto que representa o usuário, ou o "login".<br>_Ex.:_ `gcacars` _ou_ `_g@ta.123`|
-|profile|texto|URL da página de perfil do usuário.|
-|picture|texto|URL da imagem de perfil **do usuário** (não uma qualquer).|
-|website|texto|URL do Blog, site ou página na organização do usuário.|
-|email|texto|Endereço de e-mail preferido do usuário.|
-|email_verified|booleano|`true` se foi adotada maneiras de garantir que este e-mail é controlado por este usuário.|
-|gender|texto|`male`, `female` ou outro valor.|
-|birthdate|texto|Data de nascimento no formato `YYYY-MM-DD` ou `YYYY`.<br>Se o ano for `0000`, então o valor foi omitido.|
-|zoneinfo|texto|Fuso horário do usuário. _ex.: `America/Sao_Paulo`_ [Consultar lista](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)|
-|locale|texto|Localização ou idioma do usuário. _ex.: `pt-BR`_ [Consultar lista](https://gist.github.com/msikma/8912e62ed866778ff8cd)|
-|phone_number|texto|Número de telefone preferencial do usuário. _ex_.: `+5511955552222`|
-|phone_number_verified|booleano|`true` quando foi adotado maneiras de garantir que esse telefone realmente pertence à este usuário.|
-|address|objeto JSON|Endereço postal do usuário.|
-|updated_at|número|_Timestamp_ da última  vez que as informações foram atualizadas.|
+|`sub`|texto|Identificador único (no emissor) do usuário.|
+|`name`|texto|Nome completo do usuário.|
+|`given_name`|texto|Primeiro nome do usuário.|
+|`family_name`|texto|Sobrenome do usuário.|
+|`middle_name`|texto|Nome do meio do usuário (se existir).|
+|`nickname`|texto|Nome casual do usuário, ou como prefere ser chamado. _ex.: `Gabs`_|
+|`preferred_username`|texto|Nome curto que representa o usuário, ou o "login".<br>_Ex.:_ `gcacars` _ou_ `_g@ta.123`|
+|`profile`|texto|URL da página de perfil do usuário.|
+|`picture`|texto|URL da imagem de perfil **do usuário** (não uma qualquer).|
+|`website`|texto|URL do Blog, site ou página na organização do usuário.|
+|`email`|texto|Endereço de e-mail preferido do usuário.|
+|`email_verified`|booleano|`true` se foi adotada maneiras de garantir que este e-mail é controlado por este usuário.|
+|`gender`|texto|`male`, `female` ou outro valor.|
+|`birthdate`|texto|Data de nascimento no formato `YYYY-MM-DD` ou `YYYY`.<br>Se o ano for `0000`, então o valor foi omitido.|
+|`zoneinfo`|texto|Fuso horário do usuário. _ex.: `America/Sao_Paulo`_ [Consultar lista](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)|
+|`locale`|texto|Localização ou idioma do usuário. _ex.: `pt-BR`_ [Consultar lista](https://gist.github.com/msikma/8912e62ed866778ff8cd)|
+|`phone_number`|texto|Número de telefone preferencial do usuário. _ex_.: `+5511955552222`|
+|`phone_number_verified`|booleano|`true` quando foi adotado maneiras de garantir que esse telefone realmente pertence à este usuário.|
+|`address`|objeto JSON|Endereço postal do usuário.|
+|`updated_at`|número|_Timestamp_ da última  vez que as informações foram atualizadas.|
 
 #### Claims em vários idiomas
 
 Para representar uma claim em vários idiomas, usa-se o formato `[claim]#[idioma][-[PAÍS]]?`, como por exemplo:
 
 |Claim|Valor|
-|-|-|
+|---|---|
 |`profile`|`https://exemplo.com.br/gabriel`|
 |`profile#en-US`|`https://example.com.us/gabriel`|
 |`profile#es`|`https://ejemplo.com.ar/gabriel`|
@@ -403,24 +403,24 @@ A claim `amr` segundo a [RFC8176](https://tools.ietf.org/html/rfc8176) pode ter 
 
 |Valor|Descrição
 |---|---|
-|pwd|Autenticação baseada em senha.|
-|pin|Número de identificação pessoal.|
-|sms|Confirmação de acesso via envio de um texto por SMS.|
-|tel|Confirmação de acesso via uma ligação para um número.|
-|mfa|Autenticação de múltiplo fator.<br>Quando estiver presente, deve incluir os métodos usados.|
-|otp|_One-time password_. Senhas de uso único, como as geradas em Autenticadores no celular.|
-|mca|Autenticação de múltiplo canal. Envolve mais de um canal de comunicação distinto.|
-|face|Autenticação biométrica usando reconhecimento facial.|
-|fpt|Autenticação biométrica usando uma digital (dedo).|
-|iris|Autenticação biométrica usando um escaneamento de íris.|
-|retina|Autenticação biométrica usando um escaneamento de retina.|
-|vbm|Autenticação biométrica usando uma impressão de voz.|
-|wia|Autenticação integrada do Windows.|
-|geo|Uso de informação geográfica para autenticação.|
-|swk|Prova de possessão através de um software de chave.|
-|hwk|Prova de possessão através de um dispositivo de chave.|
-|kba|Autenticação por base de conhecimento.|
-|sc|Uso de cartões inteligentes.|
+|`pwd`|Autenticação baseada em senha.|
+|`pin`|Número de identificação pessoal.|
+|`sms`|Confirmação de acesso via envio de um texto por SMS.|
+|`tel`|Confirmação de acesso via uma ligação para um número.|
+|`mfa`|Autenticação de múltiplo fator.<br>Quando estiver presente, deve incluir os métodos usados.|
+|`otp`|_One-time password_. Senhas de uso único, como as geradas em Autenticadores no celular.|
+|`mca`|Autenticação de múltiplo canal. Envolve mais de um canal de comunicação distinto.|
+|`face`|Autenticação biométrica usando reconhecimento facial.|
+|`fpt`|Autenticação biométrica usando uma digital (dedo).|
+|`iris`|Autenticação biométrica usando um escaneamento de íris.|
+|`retina`|Autenticação biométrica usando um escaneamento de retina.|
+|`vbm`|Autenticação biométrica usando uma impressão de voz.|
+|`wia`|Autenticação integrada do Windows.|
+|`geo`|Uso de informação geográfica para autenticação.|
+|`swk`|Prova de possessão através de um software de chave.|
+|`hwk`|Prova de possessão através de um dispositivo de chave.|
+|`kba`|Autenticação por base de conhecimento.|
+|`sc`|Uso de cartões inteligentes.|
 
 ### UserInfo Endpoint
 
@@ -470,33 +470,33 @@ Define como as aplicações cliente (_relying parties_) conseguem se registrar (
 
 |Metadado|Descrição|
 |---|---|
-|redirect_uris|Lista de URIs usados pelo cliente.<br>Deve ser idêntico ao informado na requisição de autenticação em `redirect_uri`.<br>Deve estar presente também em `sector_identifier_uri`|
-|response_types|Uma lista que restringe ele mesmo dos tipos de resposta (`response_type`) que pode obter.<br>De: `code`, `token`, `id_token`|
-|grant_types|Lista de auto-restrição dos tipos de `grant_type` que pode usar.<br>De: `authorization_code`, `implicit`, `refresh_token`.|
-|application_type|O tipo de aplicação, por padrão é `web`, mas pode ser também `native`.|
-|contacts|Lista de e-mails dos responsáveis.|
-|client_name|Nome da aplicação que é apresentado para o usuário.|
-|logo_uri|URL da imagem do logotipo apresentado para o usuário.|
-|client_uri|URL da página inicial da aplicação.|
-|policy_uri|URL da política de privacidade, informando como os dados do usuário são usados. (LGPD)|
-|tos_uri|URL da página de termos de serviço.|
-|subject_type|Uma lista de tipos de sujeito que a aplicação pode usar.<br>De: `public` ou `pairwise`.<br>No _nexso_ aplicações externas devem usar `pairwise` obrigatoriamente. (LGPD)|
-|default_max_age|Validade máxima padrão da autenticação em segundos.<br>Nesse período o usuário deve se manter ativo.|
-|require_auth_time|Booleano que indica se a claim `auth_time` deve estar presente. Por padrão é `false`.|
-|default_acr_values|Lista que especifica os valores padrões de `acr` em ordem de preferência.|
-|initiate_login_uri|URI em `https` que um terceiro pode usar para iniciar o login. Deve aceitar tanto os métodos `GET` e `POST` como os parâmetros `login_hint`, `iss` e `target_link_uri`.|
-|request_uris|Lista de URIs que serão pré-registradas para essa aplicação no IdP, habilitando o cache dos dados.<br>A URI pode conter um fragmento que é o hash SHA-256 do conteúdo do arquivo usado para versionamento.|
-|sector_identifier_uri|URL usando `https` para calcular um identificador pseudônimo para as contas pelo IdP, referenciando um arquivo JSON com a lista de URLs.<br>Relativo ao `pairwise` e deve conter as URIs que estão em `redirect_uris`.<br>Provê uma forma de alterar o `redirect_uri` sem ter que registrar novamente todos seus usuários.|
-|request_object_signing_alg|Algoritmo usado para verificar a assinatura quando a requisição de autenticação ocorre com os dados em um JWT, tanto por valor `request` ou por referência `request_uri`.|
-|request_object_encryption_alg|Algoritmo criptográfico para usar no JWE para criptografar o token de requisição de autenticação.|
-|token_endpoint_auth_method|Forma de autenticação da aplicação (cliente) na requisição de token.<br>Pode ser: `client_secret_basic` (padrão), `client_secret_post`, `client_secret_jwt`, `private_key_jwt`.<br>No FAPI ainda existe: `tls_client_auth` e `self_signed_tls_client_auth`.|
-|token_endpoint_auth_signing_alg|Algoritmo usado para assinar o JWT usado para autenticar o cliente quando o método é `private_key_jwt` ou `client_secret_jwt`.|
-|id_token_signed_response_alg|Algoritmo usado para assinar o JWS.<br>Por padrão: `RS256`.|
-|id_token_encrypted_response_alg|Algoritmo de criptografia usado no JWE.<br>Por padrão: `A128CBC-HS256`.|
-|userinfo_signed_response_alg|JWS algoritmo para assinar respostas da _UserInfo_. (opcional)|
-|userinfo_encrypted_response_alg|Algoritmo para usar no JWE para criptografar a resposta da _UserInfo_. (opcional)|
-|userinfo_encrypted_response_enc|Algoritmo criptográfico para usar no JWE para criptografar a resposta da _UserInfo_. (opcional)|
-|jwks_uri|URL do JSON Web Key Set da aplicação.|
+|`redirect_uris`|Lista de URIs usados pelo cliente.<br>Deve ser idêntico ao informado na requisição de autenticação em `redirect_uri`.<br>Deve estar presente também em `sector_identifier_uri`|
+|`response_types`|Uma lista que restringe ele mesmo dos tipos de resposta (`response_type`) que pode obter.<br>De: `code`, `token`, `id_token`|
+|`grant_types`|Lista de auto-restrição dos tipos de `grant_type` que pode usar.<br>De: `authorization_code`, `implicit`, `refresh_token`.|
+|`application_type`|O tipo de aplicação, por padrão é `web`, mas pode ser também `native`.|
+|`contacts`|Lista de e-mails dos responsáveis.|
+|`client_name`|Nome da aplicação que é apresentado para o usuário.|
+|`logo_uri`|URL da imagem do logotipo apresentado para o usuário.|
+|`client_uri`|URL da página inicial da aplicação.|
+|`policy_uri`|URL da política de privacidade, informando como os dados do usuário são usados. (LGPD)|
+|`tos_uri`|URL da página de termos de serviço.|
+|`subject_type`|Uma lista de tipos de sujeito que a aplicação pode usar.<br>De: `public` ou `pairwise`.<br>No _nexso_ aplicações externas devem usar `pairwise` obrigatoriamente. (LGPD)|
+|`default_max_age`|Validade máxima padrão da autenticação em segundos.<br>Nesse período o usuário deve se manter ativo.|
+|`require_auth_time`|Booleano que indica se a claim `auth_time` deve estar presente. Por padrão é `false`.|
+|`default_acr_values`|Lista que especifica os valores padrões de `acr` em ordem de preferência.|
+|`initiate_login_uri`|URI em `https` que um terceiro pode usar para iniciar o login. Deve aceitar tanto os métodos `GET` e `POST` como os parâmetros `login_hint`, `iss` e `target_link_uri`.|
+|`request_uris`|Lista de URIs que serão pré-registradas para essa aplicação no IdP, habilitando o cache dos dados.<br>A URI pode conter um fragmento que é o hash SHA-256 do conteúdo do arquivo usado para versionamento.|
+|`sector_identifier_uri`|URL usando `https` para calcular um identificador pseudônimo para as contas pelo IdP, referenciando um arquivo JSON com a lista de URLs.<br>Relativo ao `pairwise` e deve conter as URIs que estão em `redirect_uris`.<br>Provê uma forma de alterar o `redirect_uri` sem ter que registrar novamente todos seus usuários.|
+|`request_object_signing_alg`|Algoritmo usado para verificar a assinatura quando a requisição de autenticação ocorre com os dados em um JWT, tanto por valor `request` ou por referência `request_uri`.|
+|`request_object_encryption_alg`|Algoritmo criptográfico para usar no JWE para criptografar o token de requisição de autenticação.|
+|`token_endpoint_auth_method`|Forma de autenticação da aplicação (cliente) na requisição de token.<br>Pode ser: `client_secret_basic` (padrão), `client_secret_post`, `client_secret_jwt`, `private_key_jwt`.<br>No FAPI ainda existe: `tls_client_auth` e `self_signed_tls_client_auth`.|
+|`token_endpoint_auth_signing_alg`|Algoritmo usado para assinar o JWT usado para autenticar o cliente quando o método é `private_key_jwt` ou `client_secret_jwt`.|
+|`id_token_signed_response_alg`|Algoritmo usado para assinar o JWS.<br>Por padrão: `RS256`.|
+|`id_token_encrypted_response_alg`|Algoritmo de criptografia usado no JWE.<br>Por padrão: `A128CBC-HS256`.|
+|`userinfo_signed_response_alg`|JWS algoritmo para assinar respostas da _UserInfo_. (opcional)|
+|`userinfo_encrypted_response_alg`|Algoritmo para usar no JWE para criptografar a resposta da _UserInfo_. (opcional)|
+|`userinfo_encrypted_response_enc`|Algoritmo criptográfico para usar no JWE para criptografar a resposta da _UserInfo_. (opcional)|
+|`jwks_uri`|URL do JSON Web Key Set da aplicação.|
 
 Os metadados `client_name`, `tos_uri`, `policy_uri`, `logo_uri`, `client_uri` podem ter opções em outros idiomas usando o # e o código do idioma [conforme descrito acima](#claims_em_varios_idiomas).
 
@@ -555,12 +555,12 @@ A resposta retorna os metadados informados na requisição e mais os valores pad
 
 |Metadado|Descrição|
 |---|---|
-|client_id|O identificador único do cliente (aplicação).|
-|client_secret|O segredo gerado para a aplicação conseguir se autenticar na requisição de Token.|
-|registration_access_token|Um token de acesso que pode ser usada pela aplicação para usar outros métodos.|
-|registration_client_uri|URI do local onde o cliente pode usar o token de acesso acima para executar outras operações.|
-|client_id_issued_at|Timestamp de quando o registro foi criado.|
-|client_secret_expires_at|Timestamp de quando o segredo irá expirar, ou `0` caso não tenha data de validade.|
+|`client_id`|O identificador único do cliente (aplicação).|
+|`client_secret`|O segredo gerado para a aplicação conseguir se autenticar na requisição de Token.|
+|`registration_access_token`|Um token de acesso que pode ser usada pela aplicação para usar outros métodos.|
+|`registration_client_uri`|URI do local onde o cliente pode usar o token de acesso acima para executar outras operações.|
+|`client_id_issued_at`|Timestamp de quando o registro foi criado.|
+|`client_secret_expires_at`|Timestamp de quando o segredo irá expirar, ou `0` caso não tenha data de validade.|
 
 ```http
 HTTP/1.1 201 Created
@@ -739,8 +739,8 @@ No OpenID Connect Discovery, é preciso configurar os valores dos metadados abai
 No registro do cliente deve ser informado os metadados:
 |Metadado|Descrição|
 |---|---|
-|backchannel_logout_uri|URL usando `https` da aplicação que irá limpar a sessão nela mesmo quando receber um token de Logout.|
-|backchannel_logout_session_required|Booleando que indica se deve ser enviado o `sid` no token de Logout.|
+|`backchannel_logout_uri`|URL usando `https` da aplicação que irá limpar a sessão nela mesmo quando receber um token de Logout.|
+|`backchannel_logout_session_required`|Booleando que indica se deve ser enviado o `sid` no token de Logout.|
 
 ###### Logout Token
 
@@ -748,13 +748,13 @@ O token de logout, que deve ser assinado e pode ser criptografado e possui as cl
 
 |Claim|Descrição|
 |---|---|
-|iss|URL do servidor de autenticação.|
-|sub|A identificação do sujeito/usuário.|
-|aud|O ID de cliente da aplicação.|
-|iat|Timestamp da data de geração do token.|
-|jti|Identificador único deste token.|
-|events|Um objeto JSON que contém o atributo vazio `http://schemas.openid.net/event/backchannel-logout` indicando que é um token de logout.|
-|sid|Identificador da sessão atual.|
+|`iss`|URL do servidor de autenticação.|
+|`sub`|A identificação do sujeito/usuário.|
+|`aud`|O ID de cliente da aplicação.|
+|`iat`|Timestamp da data de geração do token.|
+|`jti`|Identificador único deste token.|
+|`events`|Um objeto JSON que contém o atributo vazio `http://schemas.openid.net/event/backchannel-logout` indicando que é um token de logout.|
+|`sid`|Identificador da sessão atual.|
 
 Exemplo:
 
@@ -780,11 +780,11 @@ Deve seguir os mesmos passos da [validação do ID Token](#validacao-do-id-token
 
 |Claim ou item|Validação|
 |---|---|
-|sid|Deve existir o identificador de sessão.|
-|events|Deve ter um atributo `http://schemas.openid.net/event/backchannel-logout`.|
-|nonce|**Não** deve existir.|
-|jti|Verificar se outro token com o mesmo ID único já não foi usado.|
-|iss|Comparar o emissor do token de Logout com o token de ID.|
+|`sid`|Deve existir o identificador de sessão.|
+|`events`|Deve ter um atributo `http://schemas.openid.net/event/backchannel-logout`.|
+|`nonce`|**Não** deve existir.|
+|`jti`|Verificar se outro token com o mesmo ID único já não foi usado.|
+|`iss`|Comparar o emissor do token de Logout com o token de ID.|
 
 Em caso de erro, rejeitar e retornar uma resposta HTTP 400 - Bad Request.
 
