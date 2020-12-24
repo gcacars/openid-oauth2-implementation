@@ -289,7 +289,16 @@ const configuration = {
   // Interface UI
   interactions: {
     url(ctx, itx) {
-      return `https://provider.dev.br/${itx.prompt.name}?uid=${itx.uid}&login_hint=${itx.params.login_hint}`;
+      switch (itx.prompt.name) {
+        case 'login':
+          return `https://provider.dev.br/login?uid=${itx.uid}&login_hint=${itx.params.login_hint}`;
+
+        case 'consent':
+          return `https://provider.dev.br/consent?uid=${itx.uid}`;
+
+        default:
+          return `https://provider.dev.br/${itx.prompt.name}`;
+      }
     },
   },
 
