@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import Home from '../views/Home.vue';
 import Login from '../views/Login.vue';
 import Consent from '../views/Consent.vue';
 import SelectAccount from '../views/SelectAccount.vue';
@@ -7,11 +6,7 @@ import SelectAccount from '../views/SelectAccount.vue';
 const routes = [
   {
     path: '/',
-    name: 'Home',
-    component: Home,
-  },
-  {
-    path: '/login',
+    alias: '/login',
     name: 'Login',
     component: Login,
   },
@@ -27,11 +22,26 @@ const routes = [
   },
   {
     path: '/tos',
-    name: 'TermoServico',
+    name: 'Tos',
     // separação do código no nível de rota
     // isso irá gerar um código separado para essa rota (adicional.[hash].js)
     // que será carregando posteriormente quando a rota for visitada.
     component: () => import(/* webpackChunkName: "adicionais" */ '../views/TOS.vue'),
+  },
+  {
+    path: '/privacy',
+    name: 'Privacy',
+    component: () => import(/* webpackChunkName: "adicionais" */ '../views/TOS.vue'), // FIX
+  },
+  {
+    path: '/logout',
+    name: 'Logout',
+    redirect: () => `${process.env.VUE_APP_PROVIDER_URL}/ui/logout`,
+  },
+  {
+    path: '/abort',
+    name: 'Abort',
+    redirect: () => `${process.env.VUE_APP_PROVIDER_URL}/ui/abort`,
   },
 ];
 

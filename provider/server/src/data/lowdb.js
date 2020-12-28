@@ -35,6 +35,20 @@ try {
         title: 'OpenID',
         grantable: false,
       },
+      {
+        _id: 'phone',
+        title: 'Seu número de telefone',
+        desc: `A aplicação terá acesso ao seu número de telefone e poderá
+        te enviar SMS ou fazer ligações.`,
+        grantable: true,
+      },
+      {
+        _id: 'profile',
+        title: 'Seu perfil',
+        desc: `Sua data de nascimento, nome completo, gênero, foto, perfil e
+        outras informações, estejam disponíveis para aplicação.`,
+        grantable: true,
+      },
     ],
   }).write();
 } catch (error) {

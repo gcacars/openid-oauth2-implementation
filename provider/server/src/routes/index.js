@@ -38,6 +38,7 @@ class Routes {
     router.post('/:uid/continue');
     router.post('/:uid/confirm', bodyParser, router.confirm());
     router.post('/:uid/abort', router.abort());
+    router.post('/:uid/logout');
     return router;
   }
 

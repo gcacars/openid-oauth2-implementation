@@ -189,9 +189,11 @@ class UIController {
     }
 
     // Informar provedor
-    return provider.interactionFinished(ctx.originalRequest, ctx.originalResponse, result, {
-      mergeWithLastSubmission: false,
-    });
+    const redirectTo = await provider.interactionResult(
+      ctx.originalRequest, ctx.originalResponse, result, { mergeWithLastSubmission: false },
+    );
+
+    return redirectTo;
   }
 
   /**
@@ -203,6 +205,7 @@ class UIController {
    * @memberof UIController
    */
   async confirm(ctx) {
+    // Pegar detalhes
     /**
      * @type {import('oidc-provider').Provider}
      */
@@ -212,25 +215,34 @@ class UIController {
     );
     assert.equal(name, 'consent');
 
-    const consent = {};
+    // Obter o que o usuário aceitou
+    let aceitos = ctx.request.body.accepted;
 
-    // any scopes you do not wish to grant go in here
-    //   otherwise details.scopes.new.concat(details.scopes.accepted) will be granted
-    consent.rejectedScopes = [];
+    // Quando só há um selecionado, não é interpretado como lista
+    if (!Array.isArray(aceitos)) aceitos = [aceitos];
 
-    // any claims you do not wish to grant go in here
-    //   otherwise all claims mapped to granted scopes
-    //   and details.claims.new.concat(details.claims.accepted) will be granted
-    consent.rejectedClaims = [];
+    // Pegar os escopos que já foram rejeitados e continuam sendo rejeitados:
+    let rejectedScopes = details.scopes.rejected.filter((r) => !aceitos.includes(r));
+    // Acrescentamos aos rejeitados, os escopos novos e que não foram aceitos
+    rejectedScopes = rejectedScopes.concat(details.scopes.new.filter((n) => !aceitos.includes(n)));
 
-    // replace = false means previously rejected scopes and claims remain rejected
-    // changing this to true will remove those rejections in favour of just what you rejected above
-    consent.replace = false;
+    // Vamos montar o objeto de concessão
+    const consent = {
+      // escopos rejeitados (exceto openid)
+      rejectedScopes: rejectedScopes.filter((r) => r !== 'openid'),
+      // claims rejeitadas (a tela não manipula isso)
+      rejectedClaims: [],
+      // escopos rejeitados anteriormente debem ser substituídos pelos que foram aceitos agora
+      replace: true,
+    };
 
+    // Finalizar interação
     const result = { consent };
-    return provider.interactionFinished(ctx.originalRequest, ctx.originalResponse, result, {
-      mergeWithLastSubmission: true,
-    });
+    const redirectTo = await provider.interactionResult(
+      ctx.originalRequest, ctx.originalResponse, result, { mergeWithLastSubmission: true },
+    );
+
+    return redirectTo;
   }
 
   /**

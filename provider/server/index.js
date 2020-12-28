@@ -608,7 +608,7 @@ const configuration = {
     response_types: ['code', 'code id_token', 'id_token'],
     grant_types: ['authorization_code', 'implicit'],
     token_endpoint_auth_method: 'client_secret_basic',
-    scope: 'openid email',
+    scope: 'openid email phone profile',
     revocation_endpoint_auth_method: 'client_secret_jwt',
 
     // Configurações do token
@@ -678,5 +678,5 @@ app.use(KoaMount(oidc.app));
 // Iniciar servidor
 const server = app.listen(3000, () => {
   console.log('oidc-provider está pronto, verifique https://api.provider.dev.br/.well-known/openid-configuration');
-  console.log('Inicie o login em: https://api.provider.dev.br/auth?response_type=code&scope=openid%20email&client_id=app&login_hint=manoel@exemplo.com.br&redirect_uri=https://apprp.dev.br/cb&state=af0ifjsldkj');
+  console.log('Inicie o login em: https://api.provider.dev.br/auth?response_type=code&scope=openid%20email%20profile%20phone&client_id=app&login_hint=manoel@exemplo.com.br&redirect_uri=https://apprp.dev.br/cb&state=af0ifjsldkj');
 });

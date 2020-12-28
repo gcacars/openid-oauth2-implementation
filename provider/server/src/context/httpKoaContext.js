@@ -56,6 +56,8 @@ function makeHttpContext(controller) {
       ctx.body = {
         ok: false,
         error: error.message,
+        error_description: error.error_description,
+        error_code: error.code || error.name,
         detail: error.stack,
       };
     }

@@ -1,13 +1,14 @@
 <template>
   <router-view/>
+  <toasts />
 </template>
 
-<style>
-html {
-  height: 100vh;
-}
-body {
-  min-height: 100vh;
-  background-color: #aad4c1;
-}
-</style>
+<script>
+import Toasts from './components/Toasts.vue';
+
+export default {
+  components: {
+    Toasts,
+  },
+};
+</script>

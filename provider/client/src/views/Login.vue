@@ -1,15 +1,15 @@
 <template>
   <div class="container pt-lg-md">
     <div class="row justify-content-center">
-      <div class="col-lg-5 col-xl-4">
+      <div class="col-md-6 col-lg-5 col-xl-4">
         <div class="card border-0 shadow">
-          <div class="card-body px-lg-4 py-lg-5">
+          <div class="card-body px-md-4 py-md-3 py-lg-4 py-lg-5">
             <div class="text-muted text-center mb-4">
               <h4>Bem vindo(a)</h4>
-              Entre na sua conta
+              <span v-html="mensagem"></span>
             </div>
             <form :action="action" method="post" autocomplete="off" role="form"
-                  @submit="enviar($event)">
+                  @submit.prevent="enviar($event)" enctype="application/x-www-form-urlencoded">
               <input type="hidden" name="prompt" value="login"/>
               <div v-if="!verificado">
                 <div class="mb-1">
@@ -60,10 +60,7 @@
             </form>
           </div>
         </div>
-        <div class="mt-3 text-end">
-          <a href="#" class="d-inline-block link-dark me-3"><small>Privacidade</small></a>
-          <a href="#" class="d-inline-block link-dark"><small>Termos de serviço</small></a>
-        </div>
+        <terms-footer />
       </div>
     </div>
   </div>
@@ -71,6 +68,8 @@
 
 <script>
 import { BIconBackspaceFill } from 'bootstrap-icons-vue';
+import TermsFooter from '../components/TermsFooter.vue';
+import fetchConfig from '../config/fetch';
 
 const checkedLogins = [];
 
@@ -78,6 +77,7 @@ export default {
   name: 'Login',
   components: {
     BIconBackspaceFill,
+    TermsFooter,
   },
 
   data() {
@@ -91,17 +91,63 @@ export default {
     };
   },
 
+  computed: {
+    // Exibe uma mensagem do motivo da tela de login ter aparecido para o usuário
+    mensagem() {
+      const { reason } = this.$route.query;
+      switch (reason) {
+        case 'SessionNotFound':
+          return 'Sessão encerrada. Por favor, entre novamente.';
+
+        case 'UnknownError':
+          return 'Aconteceu algum erro desconhecido.<br>Por favor, entre novamente.';
+
+        default:
+          return 'Entre na sua conta';
+      }
+    },
+  },
+
   methods: {
     async enviar(event) {
       if (!this.verificado) {
-        event.preventDefault();
         this.verificando = true;
         await this.verificar();
         this.verificando = false;
       } else if (this.senha.trim() === '' || this.senha.length < 8) {
-        // FIX senha em branco
+        this.$store.dispatch('addToast', {
+          title: 'Senha inválida',
+          message: 'Por favor preencha corretamente com a senha da sua conta.',
+        });
       } else {
         this.acessando = true;
+
+        try {
+          // Envia o formulário
+          const res = await fetch(
+            `${process.env.VUE_APP_PROVIDER_URL}/ui/${this.$route.query.uid}/login`,
+            { ...fetchConfig, method: 'POST', body: new URLSearchParams(new FormData(event.target)) },
+          );
+          const json = await res.json();
+
+          if ('error' in json || !json.ok || !json.data.startsWith('https://')) {
+            this.$store.dispatch('addToast', {
+              title: 'Erro',
+              message: 'Ocorreu um erro ao entrar. Tente novamente.',
+            });
+          }
+
+          // Quando sucesso, recebemos um redirecionamento
+          window.location.href = json.data;
+        } catch (error) {
+          console.log(error);
+          this.$store.dispatch('addToast', {
+            title: 'Erro desconhecido',
+            message: 'Ocorreu um erro ao entrar. Tente novamente mais tarde.',
+          });
+        } finally {
+          this.acessando = false;
+        }
       }
     },
 
