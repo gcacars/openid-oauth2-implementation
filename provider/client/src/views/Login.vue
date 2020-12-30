@@ -10,18 +10,19 @@
             </div>
             <form :action="action" method="post" autocomplete="off" role="form"
                   @submit.prevent="enviar($event)" enctype="application/x-www-form-urlencoded">
-              <input type="hidden" name="prompt" value="login"/>
+              <input type="hidden" name="prompt" value="login" />
               <div v-if="!verificado">
                 <div class="mb-1">
                   <input aria-describedby="addon-left" placeholder="E-mail ou usuário"
-                        class="form-control" v-model="login" :autofocus="!login" required>
+                        class="form-control" v-model="login" :autofocus="!login" required
+                        autocomplete="username">
                 </div>
                 <div class="mb-3">
                   <small><a href="#">Não lembra qual é sua conta?</a></small>
                 </div>
               </div>
               <div v-else>
-                <input type="hidden" name="login" :value="login" />
+                <input type="hidden" name="login" :value="login" autocomplete="username" />
                 <div class="mb-3 d-flex align-items-center">
                   <span class="w-100">{{ login }}</span>
                   <button type="button" class="btn btn-outline-secondary mr-2 d-flex"
@@ -31,7 +32,8 @@
                 </div>
                 <div class="mb-1">
                   <input aria-describedby="addon-left" type="password" name="password"
-                        placeholder="Password" class="form-control" v-model="senha" required>
+                        placeholder="Password" class="form-control" v-model="senha" required
+                        autocomplete="current-password">
                 </div>
                 <div class="mb-3">
                   <small><a href="#">Esqueceu sua senha?</a></small>

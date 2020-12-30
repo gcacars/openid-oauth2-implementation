@@ -1,36 +1,47 @@
 <template>
   <div class="home">
-    <img alt="Vue logo" src="../assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
-    <pre>
-      <code v-html="user"></code>
-    </pre>
+    <div class="pt-3 pb-2 mb-3 border-bottom">
+      <h1 class="h2" v-if="oidcIsAuthenticated">Olá {{ oidcUser.given_name }}</h1>
+    </div>
+    <p>Os dados que posso ver de você são estes:</p>
+    <pre v-html="JSON.stringify(oidcUser, null, 2)" v-if="oidcIsAuthenticated"></pre>
+    <button type="button" class="btn btn-outline-primary mb-3" @click="getUserInfo">
+      Carregar UserInfo
+    </button>
+    <pre v-html="userInfo"></pre>
   </div>
 </template>
 
 <script>
-// @ is an alias to /src
-import HelloWorld from '@/components/HelloWorld.vue';
-import Auth from '../app/Auth';
+import { mapGetters } from 'vuex';
 
 export default {
   name: 'Home',
   components: {
-    HelloWorld,
   },
-  
+
   data: () => ({
-    user: null,
+    userInfo: '',
   }),
-  
-  created() {
-    console.log(Auth.events.userLoaded);
-    /*await Auth.events.userLoaded(async (x) => {
-      console.log('login', x);
-      const user = await Auth.getUser();
-      console.log('user', user);
-      this.user = user;
-    });*/
+
+  computed: {
+    ...mapGetters('auth', [
+      'oidcIsAuthenticated',
+      'oidcUser',
+    ]),
+  },
+
+  methods: {
+    async getUserInfo() {
+      console.log(this.$store.state);
+      const res = await fetch(`${process.env.VUE_APP_PROVIDER_URL}/me`, {
+        headers: {
+          Authorization: `Bearer ${this.$store.state.auth.access_token}`,
+        },
+      });
+      const result = await res.text();
+      this.userInfo = result;
+    },
   },
 };
 </script>

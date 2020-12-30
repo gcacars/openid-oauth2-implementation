@@ -34,6 +34,7 @@ class Account {
         async claims() {
           return {
             sub: id,
+            given_name: account.firstName,
             picture: account.picture_url,
             email: account.email,
             email_verified: account.email_verified,

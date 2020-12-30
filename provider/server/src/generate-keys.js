@@ -1,10 +1,11 @@
 import fs from 'fs';
 import path from 'path';
-import jose from 'jose';
+import { JWKS } from 'jose';
 
-const keystore = new jose.JWKS.KeyStore();
+const keystore = new JWKS.KeyStore();
 
 Promise.all([
+  keystore.generate('RSA', 2048, { alg: 'RS256', use: 'sig' }),
   keystore.generate('RSA', 2048, { use: 'sig' }),
   keystore.generate('RSA', 2048, { use: 'enc' }),
   keystore.generate('EC', 'P-256', { use: 'sig' }),

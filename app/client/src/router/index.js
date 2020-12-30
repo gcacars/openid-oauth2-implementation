@@ -1,6 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import { vuexOidcCreateRouterMiddleware } from 'vuex-oidc';
+import Sidebar from '../components/Sidebar.vue';
+import TopHeader from '../components/TopHeader.vue';
+import Empty from '../components/Empty.vue';
+import OidcCallback from '../views/OidcCallback.vue';
+import OidcPopupCallback from '../views/OidcPopupCallback.vue';
 import Home from '../views/Home.vue';
-import Auth from '../app/Auth';
+import Public from '../views/Public.vue';
 
 /**
  * @type {import('vue-router').RouteRecordRaw[]}
@@ -9,69 +15,109 @@ const routes = [
   {
     path: '/',
     name: 'Home',
-    component: Home,
-    meta: {
-      // authName: mainAuth.authName,
+    components: {
+      default: Home,
+      sidebar: Sidebar,
+      header: TopHeader,
     },
   },
   {
-    path: '/about',
-    name: 'About',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/About.vue'),
+    path: '/auth',
+    name: 'oidcCallback',
+    components: {
+      default: OidcCallback,
+      sidebar: Empty,
+      header: Empty,
+    },
+  },
+  {
+    path: '/authp',
+    name: 'oidcPopupCallback',
+    component: OidcPopupCallback,
+  },
+  {
+    path: '/logout',
+    name: 'Logout',
+  },
+  {
+    path: '/auth-error',
+    name: 'oidcError',
+    components: {
+      default: () => import(/* webpackChunkName: "adicionais" */ '../views/OidcError.vue'),
+      sidebar: Sidebar,
+      header: TopHeader,
+    },
     meta: {
-      requiresAuth: true,
+      isPublic: true,
     },
   },
   {
     path: '/public',
     name: 'Public',
-  },
-  {
-    path: '/cb',
-    name: 'Callback',
-    beforeEnter(to, from, next) {
-      console.log(to, from);
-      Auth.complete();
-      next('/');
+    components: {
+      default: Public,
+      sidebar: Sidebar,
+      header: TopHeader,
     },
-    redirect: '/',
+    meta: {
+      isPublic: true,
+    },
   },
   {
-    path: '/logout',
-    name: 'Logout',
-    beforeEnter(to, from, next) {
-      Auth.logout();
-      next();
+    path: '/openid',
+    name: 'OpenID',
+    components: {
+      default: () => import(/* webpackChunkName: "adicionais" */ '../views/Markdown.vue'),
+      sidebar: Sidebar,
+      header: TopHeader,
+    },
+    meta: {
+      isPublic: true,
+      file: 'OpenID.md',
+    },
+  },
+  {
+    path: '/projetos',
+    name: 'Projetos',
+    components: {
+      default: () => import(/* webpackChunkName: "adicionais" */ '../views/Markdown.vue'),
+      sidebar: Sidebar,
+      header: TopHeader,
+    },
+    meta: {
+      isPublic: true,
+      file: 'README.md',
+    },
+  },
+  {
+    path: '/sobre',
+    name: 'Sobre',
+    components: {
+      default: () => import(/* webpackChunkName: "adicionais" */ '../views/Markdown.vue'),
+      sidebar: Sidebar,
+      header: TopHeader,
+    },
+    meta: {
+      isPublic: true,
+      file: 'app/client/README.md',
     },
   },
 ];
 
-const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
-  routes,
-  scrollBehavior (to, from, savedPosition) {
-    if (savedPosition) {
-      return savedPosition;
-    } else {
+function makeRouter(store) {
+  const router = createRouter({
+    history: createWebHistory(process.env.BASE_URL),
+    routes,
+    scrollBehavior(to, from, savedPosition) {
+      if (savedPosition) {
+        return savedPosition;
+      }
       return { top: 0 };
-    }
-  },
-});
+    },
+  });
 
-router.beforeEach(async (to, from, next) => {
-  if (to.matched.some((r) => r.meta.requiresAuth)) {
-    if (!Auth.loggedIn()) {
-      const res = await Auth.login();
-      console.log(res, 'Auth login');
-    } else {
-      next();
-    }
-  } else {
-    next();
-  }
-});
+  router.beforeEach(vuexOidcCreateRouterMiddleware(store, 'auth'));
+  return router;
+}
 
-export default router;
+export default makeRouter;

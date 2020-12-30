@@ -41,7 +41,7 @@ const configuration = {
 
   // Vamos informar as claims suportadas para cada escopo
   claims: {
-    openid: ['sub'],
+    openid: ['sub', 'given_name'],
     address: ['address'],
     email: ['email', 'email_verified'],
     phone: ['phone_number', 'phone_number_verified'],
@@ -116,7 +116,7 @@ const configuration = {
     // Segurança
     // dPoP: { enabled: true, iatTolerance: 60 },
     clientCredentials: { enabled: true },
-    encryption: { enabled: true },
+    encryption: { enabled: false },
     fapiRW: { enabled: false },
     jwtResponseModes: { enabled: false }, // JARM
     requestObjects: {
@@ -456,7 +456,7 @@ const configuration = {
       'A128CBC-HS256', 'A128GCM', 'A256CBC-HS512', 'A256GCM', // 'A192CBC-HS384', 'A192GCM',
     ],
     idTokenSigningAlgValues: [
-      // 'none',
+      'none',
       'HS256', // 'HS384', 'HS512',
       'RS256', // 'RS384', 'RS512',
       'PS256', // 'PS384', 'PS512',
@@ -551,7 +551,7 @@ const configuration = {
       'A128CBC-HS256', 'A128GCM', 'A256CBC-HS512', 'A256GCM', // 'A192CBC-HS384', 'A192GCM',
     ],
     userinfoSigningAlgValues: [
-      // 'none',
+      'none',
       'HS256', // 'HS384', 'HS512',
       'RS256', // 'RS384', 'RS512',
       'PS256', // 'PS384', 'PS512',
@@ -608,19 +608,18 @@ const configuration = {
     redirect_uris: [
       'https://apprp.dev.br/',
       'https://apprp.dev.br/cb',
+      'https://apprp.dev.br/auth',
+      'https://apprp.dev.br/authp',
+      'https://apprp.dev.br/s.html',
       'https://apprp.dev.br/logout',
       'https://apprp.dev.br/pre-tela',
-      'https://apprp.dev.br/auth/signinsilent/op',
-      'https://apprp.dev.br/auth/signinwin/op',
-      'https://apprp.dev.br/auth/signinpop/op',
-      'https://apprp.dev.br/auth/signoutpop/op',
     ],
     // initiate_login_uri: 'https://apprp.dev.br/pre-tela',
     post_logout_redirect_uris: [
       'https://apprp.dev.br/logout',
     ],
     sector_identifier_uri: 'https://apprp.dev.br/',
-    // subject_type: 'public',
+    subject_type: 'public',
 
     // Configurações do OpenID ou OAuth
     response_types: ['code', 'code id_token', 'id_token', 'code id_token token'],
@@ -635,8 +634,8 @@ const configuration = {
 
     // Segurança
     // jwks_uri: '',
-    id_token_signed_response_alg: 'HS256',
-    userinfo_signed_response_alg: 'HS256',
+    id_token_signed_response_alg: 'RS256',
+    userinfo_signed_response_alg: 'RS256',
 
     // Administrativo
     contacts: ['admin-aplicativo@exemplo.com.br'],
@@ -701,5 +700,5 @@ app.use(KoaMount(oidc.app));
 // Iniciar servidor
 const server = app.listen(3000, () => {
   console.log('oidc-provider está pronto, verifique https://api.provider.dev.br/.well-known/openid-configuration');
-  console.log('Inicie o login em: https://api.provider.dev.br/auth?response_type=code&scope=openid%20email%20profile%20phone&client_id=app&login_hint=manoel@exemplo.com.br&redirect_uri=https://apprp.dev.br/cb&state=af0ifjsldkj');
+  console.log('Inicie o login em: https://apprp.dev.br/');
 });
