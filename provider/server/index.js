@@ -318,6 +318,7 @@ const configuration = {
   // Função para calcular um id genérico para o usuário, quando usado o `pairwise`
   // Deve ser rápido!
   async pairwiseIdentifier(ctx, accountId, client) {
+    if (client.clientId === 'app') return accountId;
     const cacheKey = `${accountId}-${client.clientId}`;
 
     // Retorna o do cache se já foi calculado
@@ -378,7 +379,7 @@ const configuration = {
   subjectTypes: ['pairwise', 'public'],
 
   // Modo de autenticação na requisição de token
-  tokenEndpointAuthMethods: ['client_secret_basic', 'client_secret_jwt', 'private_key_jwt'],
+  tokenEndpointAuthMethods: ['client_secret_basic', 'client_secret_jwt', 'private_key_jwt', 'none'],
 
   // Tempos de expiração para cada token
   ttl: {
@@ -559,6 +560,16 @@ const configuration = {
     ],
   },
 
+  // PKCE para autenticação de clientes públicos que requerem `code`
+  pkceMethods: ['S256'],
+  pkce: {
+    methods: ['S256'],
+    // eslint-disable-next-line arrow-body-style
+    required: (ctx, client) => {
+      return client.tokenEndpointAuthMethod === 'none' && client.applicationType === 'web';
+    },
+  },
+
   async renderError(ctx, out, error) {
     ctx.type = 'html';
     ctx.body = `<!DOCTYPE html>
@@ -597,18 +608,25 @@ const configuration = {
     redirect_uris: [
       'https://apprp.dev.br/',
       'https://apprp.dev.br/cb',
+      'https://apprp.dev.br/logout',
       'https://apprp.dev.br/pre-tela',
+      'https://apprp.dev.br/auth/signinsilent/op',
+      'https://apprp.dev.br/auth/signinwin/op',
+      'https://apprp.dev.br/auth/signinpop/op',
+      'https://apprp.dev.br/auth/signoutpop/op',
     ],
     // initiate_login_uri: 'https://apprp.dev.br/pre-tela',
-    // post_logout_redirect_uris: [],
+    post_logout_redirect_uris: [
+      'https://apprp.dev.br/logout',
+    ],
     sector_identifier_uri: 'https://apprp.dev.br/',
     // subject_type: 'public',
 
     // Configurações do OpenID ou OAuth
-    response_types: ['code', 'code id_token', 'id_token'],
+    response_types: ['code', 'code id_token', 'id_token', 'code id_token token'],
     grant_types: ['authorization_code', 'implicit'],
-    token_endpoint_auth_method: 'client_secret_basic',
     scope: 'openid email phone profile',
+    token_endpoint_auth_method: 'none',
     revocation_endpoint_auth_method: 'client_secret_jwt',
 
     // Configurações do token
@@ -650,9 +668,14 @@ oidc.on('revocation.error', handleClientAuthErrors);
 const app = new Koa();
 app.proxy = true;
 // app.use(helmet);
+const allowedHosts = ['https://provider.dev.br', 'https://apprp.dev.br/'];
 app.use(KoaCors({
-  origin: 'https://provider.dev.br',
+  // eslint-disable-next-line arrow-body-style
+  origin: (ctx) => {
+    return allowedHosts.includes(ctx.header.origin) ? ctx.header.origin : '';
+  },
   credentials: true,
+  exposeHeaders: ['WWW-Authenticate'],
 }));
 
 if (process.env.NODE_ENV === 'production') {

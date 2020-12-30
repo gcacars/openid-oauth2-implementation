@@ -74,6 +74,7 @@ class Routes {
       ctx.body = {
         error,
         error_description: err.message,
+        details: err,
       };
     }
   }

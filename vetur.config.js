@@ -2,10 +2,16 @@
 module.exports = {
   settings: {
     "vetur.useWorkspaceDependencies": true,
-    "vetur.experimental.templateInterpolationService": true
+    "vetur.experimental.templateInterpolationService": true,
   },
   projects: [
-    root: './provider/client',
-    package: './provider/client/package.json'
+    {
+      root: './provider/client',
+      package: './provider/client/package.json',
+    },
+    {
+      root: './app/client',
+      package: './app/client/package.json',
+    },
   ],
-}
+};

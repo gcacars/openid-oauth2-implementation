@@ -130,17 +130,17 @@ export default {
           );
           const json = await res.json();
 
-          if ('error' in json || !json.ok || !json.data.startsWith('https://')) {
+          if (!res.ok || 'error' in json || !json.ok || !json.data.startsWith('https://')) {
             this.$store.dispatch('addToast', {
               title: 'Erro',
               message: 'Ocorreu um erro ao entrar. Tente novamente.',
             });
+            return;
           }
 
           // Quando sucesso, recebemos um redirecionamento
           window.location.href = json.data;
         } catch (error) {
-          console.log(error);
           this.$store.dispatch('addToast', {
             title: 'Erro desconhecido',
             message: 'Ocorreu um erro ao entrar. Tente novamente mais tarde.',

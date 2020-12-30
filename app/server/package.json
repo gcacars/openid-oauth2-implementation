@@ -20,7 +20,8 @@
   "dependencies": {
     "dpop": "^0.5.5",
     "esm": "^3.2.25",
-    "nanoid": "^3.1.20"
+    "nanoid": "^3.1.20",
+    "openid-client": "^4.2.2"
   },
   "devDependencies": {
     "eslint": "^7.16.0",
