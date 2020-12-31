@@ -1,7 +1,7 @@
 <template>
   <span>
     <img :src="account.picture" alt="profile" class="rounded-circle me-1">
-    {{ account.given_name }}
+    <span class="d-none d-md-inline-block">{{ account.given_name }}</span>
     <small class="ms-2" v-if="logout">
       (<router-link to="Logout" v-slot="{ href }"><a :href="href">sair</a></router-link>)
     </small>

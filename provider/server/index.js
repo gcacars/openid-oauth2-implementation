@@ -4,7 +4,7 @@ import Koa from 'koa';
 import KoaCors from '@koa/cors';
 import KoaHelmet from 'koa-helmet';
 import KoaMount from 'koa-mount';
-import { Provider } from 'oidc-provider';
+import { Provider, errors } from 'oidc-provider';
 import { nanoid } from 'nanoid';
 import base64url from 'base64url';
 // import { RedisAdapter } from './src/adapters/redis';
@@ -236,11 +236,17 @@ const configuration = {
   // Metadados adicionais que um cliente pode ter
   extraClientMetadata: {
     // Lista de propriedades adicionais
-    properties: ['usoInterno', 'terceiro', 'tenantId'],
+    properties: ['web_app_type', 'usoInterno', 'terceiro', 'tenantId'],
 
     // Validação das propriedades
     validator(chave, valor, metadado) {
       switch (chave) {
+        case 'web_app_type':
+          if (valor && !['spa'].includes(valor)) {
+            throw new Error('Tipo de aplicação Web inválido');
+          }
+          break;
+
         case 'usoInterno':
           metadado.client_name = `[Interno] ${metadado.client_name}`;
           break;
@@ -294,8 +300,10 @@ const configuration = {
   interactions: {
     url(ctx, itx) {
       switch (itx.prompt.name) {
-        case 'login':
-          return `https://provider.dev.br/login?uid=${itx.uid}&login_hint=${itx.params.login_hint}`;
+        case 'login': {
+          const loginHint = itx.params.login_hint ? `&login_hint=${itx.params.login_hint}` : '';
+          return `https://provider.dev.br/login?uid=${itx.uid}${loginHint}`;
+        }
 
         case 'consent':
           return `https://provider.dev.br/consent?uid=${itx.uid}`;
@@ -639,6 +647,7 @@ const configuration = {
 
     // Administrativo
     contacts: ['admin-aplicativo@exemplo.com.br'],
+    web_app_type: 'spa',
     tenantId: 123,
   }],
 };
@@ -662,6 +671,15 @@ oidc.proxy = true;
 oidc.on('grant.error', handleClientAuthErrors);
 oidc.on('introspection.error', handleClientAuthErrors);
 oidc.on('revocation.error', handleClientAuthErrors);
+
+oidc.on('authorization.accepted', (ctx) => {
+  const { client, params } = ctx.oidc;
+
+  if (client.applicationType === 'web' && client.web_app_type === 'spa'
+      && !params.code_challenge && !params.code_challenge_method) {
+    throw new errors.InvalidRequest('Should use PKCE authentication.', 99);
+  }
+});
 
 // Configurar o Koa
 const app = new Koa();
@@ -700,5 +718,5 @@ app.use(KoaMount(oidc.app));
 // Iniciar servidor
 const server = app.listen(3000, () => {
   console.log('oidc-provider está pronto, verifique https://api.provider.dev.br/.well-known/openid-configuration');
-  console.log('Inicie o login em: https://apprp.dev.br/');
+  console.log('Inicie o login em: https://apprp.dev.br/ com o manoel@exemplo.com.br');
 });

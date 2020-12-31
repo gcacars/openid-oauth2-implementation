@@ -15,6 +15,10 @@
 <script>
 import { mapGetters } from 'vuex';
 
+const listenEvents = [
+  'userUnloaded',
+];
+
 export default {
   name: 'Home',
   components: {
@@ -33,7 +37,6 @@ export default {
 
   methods: {
     async getUserInfo() {
-      console.log(this.$store.state);
       const res = await fetch(`${process.env.VUE_APP_PROVIDER_URL}/me`, {
         headers: {
           Authorization: `Bearer ${this.$store.state.auth.access_token}`,
@@ -42,6 +45,24 @@ export default {
       const result = await res.text();
       this.userInfo = result;
     },
+
+    userUnloaded() {
+      this.$router.replace('/public');
+    },
+  },
+
+  mounted() {
+    // Ouvir eventos do OIDC
+    listenEvents.forEach((event) => {
+      window.addEventListener(`vuexoidc:${event}`, this[event]);
+    });
+  },
+
+  unmounted() {
+    // Cancelar escuta dos eventos quando o componente for descarregado
+    listenEvents.forEach((event) => {
+      window.removeEventListener(`vuexoidc:${event}`, this[event]);
+    });
   },
 };
 </script>

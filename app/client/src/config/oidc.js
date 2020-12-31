@@ -5,7 +5,6 @@ const oidcSettings = {
   scope: 'openid email profile',
   ui_locales: ['pt-BR'],
   prompt: 'login',
-  login_hint: '',
 
   redirect_uri: `${process.env.VUE_APP_URL}/auth`,
   popupRedirectUri: `${process.env.VUE_APP_URL}/authp`,
@@ -19,7 +18,7 @@ const oidcSettings = {
   automaticSilentSignin: false,
   revokeAccessTokenOnSignout: true,
   extraQueryParams: {
-    login_hint: '',
+    login_hint: 'manoel@exemplo.com.br',
   },
 };
 

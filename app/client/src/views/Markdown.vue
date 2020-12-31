@@ -11,14 +11,26 @@
 <script>
 import marked from 'marked';
 
-// Personalizar a criação de tabelas para usar os estilos do Bootstrap
+const baseGitHub = 'https://raw.githubusercontent.com/nexsolab/poc-auth-server/main/';
+
+// Personalizar a renderização do markdown
 marked.use({
   renderer: {
+    // Personalizar a criação de tabelas para usar os estilos do Bootstrap
     table(h, b) {
-      console.log(`<table class="table table-bordered table-hover">${h}${b}</table>`);
       return `<table class="table table-bordered table-hover">${h}${b}</table>`;
     },
+
+    // Adicionar um espaço melhor nos cabeçalhos
+    heading(text, level) {
+      const bsClass = 6 - level; // inverter, o H*1* deve ter mt-*5*
+      return `<h${level} class="mt-${bsClass}">${text}</h${level}>`;
+    },
   },
+});
+
+marked.setOptions({
+  baseUrl: baseGitHub,
 });
 
 export default {
@@ -34,7 +46,7 @@ export default {
       try {
         // Obtém o arquivo raw de markdown indicado na rota
         const { file } = this.$route.meta;
-        const res = await fetch(`https://raw.githubusercontent.com/nexsolab/poc-auth-server/main/${file}`);
+        const res = await fetch(`${baseGitHub}${file}`);
         const text = await res.text();
         this.md = marked(text);
       } catch (error) {
@@ -42,6 +54,13 @@ export default {
       } finally {
         this.loading = false;
       }
+    },
+  },
+
+  watch: {
+    $route() {
+      // Quando a rota mudar, devemos mudar o arquivo carregado
+      this.load();
     },
   },
 

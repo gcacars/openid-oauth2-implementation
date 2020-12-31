@@ -7,8 +7,8 @@
         <router-view name="header" class="mb-2 mb-md-4" />
 
         <router-view v-slot="{ Component }">
-          <transition enter-active-class="animate__animated animate__backInRight"
-                      leave-active-class="animate__animated animate__backOutRight">
+          <transition enter-active-class="animate__animated animate__fadeInRight"
+                      leave-active-class="animate__animated animate__fadeOutRight">
             <component :is="Component" />
           </transition>
         </router-view>
