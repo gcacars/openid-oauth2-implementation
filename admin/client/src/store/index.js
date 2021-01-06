@@ -31,8 +31,6 @@ const store = createStore({
       accessTokenExpired: () => console.info('Access token did expire'),
       silentRenewError: () => console.info('OIDC user is unloaded'),
       userSignedOut: () => {
-        console.info('OIDC user is signed out');
-        // Garantir que o usuário seja removido
         store.dispatch('auth/removeOidcUser');
       },
       oidcError: (payload) => console.info('OIDC error', payload),

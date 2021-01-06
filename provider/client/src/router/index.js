@@ -21,6 +21,11 @@ const routes = [
     component: SelectAccount,
   },
   {
+    path: '/change-password',
+    name: 'ChangePassword',
+    component: SelectAccount, // FIX
+  },
+  {
     path: '/tos',
     name: 'Tos',
     // separação do código no nível de rota

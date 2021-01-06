@@ -9,17 +9,19 @@ Este projeto faz parte de uma solução maior, se chegou diretamente, [leia o do
 Para desenvolvimento foi utilizado:
 
 * Node 14.15.0
-* Vue CLI 4.5.9
-  * Vue.js 3
-  * Vuex 4
-  * Vue Router 4
-  * Bootstrap Icons Vue
-  * Vuex OIDC _(para sincronizar o estado de autenticação com o Vuex)_
-* OIDC Client _(cliente certificado OpenID Connect para navegadores)_
-* Bootstrap 5 (beta 1)
+* [Vue CLI 4.5.9](https://next.cli.vuejs.org/)
+  * [Vue.js 3](v3.vuejs.org/)
+  * [Vuex 4](next.vuex.vuejs.org/)
+  * [Vue Router 4](next.router.vuejs.org/)
+  * [Bootstrap Icons Vue](https://www.npmjs.com/package/bootstrap-icons-vue)
+  * [Vuex OIDC](https://github.com/perarnborg/vuex-oidc/wiki) _(para sincronizar o estado de autenticação com o Vuex)_
+  * [Vue Test Utils 2 (beta)](https://vue-test-utils.vuejs.org/v2/guide/introduction.html)
+* [OIDC Client](https://github.com/IdentityModel/oidc-client-js) _(cliente certificado OpenID Connect para navegadores)_
+* [Bootstrap 5 (beta 1)](https://getbootstrap.com/docs/5.0/)
   * Popper.js
-  * Bootstrap Icons
-* Marked _(para renderizar os arquivos Markdown)_
+  * [Bootstrap Icons](https://icons.getbootstrap.com/)
+* [Marked](https://marked.js.org/) _(para renderizar os arquivos Markdown)_
+* Cypress _(testes ponta a ponta)_
 
 > Note que alguns recursos estão em fase beta ou alpha e não são ainda indicados para ambientes produtivos.
 

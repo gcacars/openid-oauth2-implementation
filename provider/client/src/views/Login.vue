@@ -167,7 +167,7 @@ export default {
           checkedLogins.push(this.login);
           this.verificado = true;
           resolve();
-        }, 1250);
+        }, 750);
       });
     },
   },

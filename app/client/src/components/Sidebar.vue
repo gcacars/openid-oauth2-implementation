@@ -1,13 +1,13 @@
 <template>
-  <nav class="sidebar">
-    <div class="sidebar-sticky">
-      <div class="mt-4 me-0 mb-5 text-center">
-        <router-link to="/" custom v-slot="{ href, navigate }">
-          <a class="fs-4 fw-bold link-light text-decoration-none" :href="href" @click="navigate">
-            Aplicação Exemplo
-          </a>
-        </router-link>
-      </div>
+  <nav class="sidebar d-flex flex-column">
+    <div class="mt-4 me-0 mb-5 text-center">
+      <router-link to="/" custom v-slot="{ href, navigate }">
+        <a class="fs-4 fw-bold link-light text-decoration-none" :href="href" @click="navigate">
+          Aplicação Exemplo
+        </a>
+      </router-link>
+    </div>
+    <div class="sidebar-sticky row">
       <ul class="nav nav-pills flex-column">
         <li class="nav-item">
           <router-link to="/" custom v-slot="{ href, isExactActive, navigate }">

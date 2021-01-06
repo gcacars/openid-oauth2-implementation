@@ -21,12 +21,30 @@ function makeRouter(store) {
         header: TopHeader,
       },
       meta: {
-        isPublic: true,
+        title: 'Início',
       },
-      beforeEnter(to, from, next) {
-        if (!store.state.auth.access_token) next('/public');
-        next();
+    },
+    {
+      path: '/clients',
+      name: 'ClientList',
+      components: {
+        default: () => import(/* webpackChunkName: "adicionais" */ '../views/reg/Clients.vue'),
+        sidebar: Sidebar,
+        header: TopHeader,
       },
+      meta: {
+        title: 'Início',
+      },
+      children: [
+        {
+          path: 'new',
+          name: 'Client',
+          component: () => import(/* webpackChunkName: "adicionais" */ '../views/reg/Client.vue'),
+          meta: {
+            title: 'Novo cliente',
+          },
+        },
+      ],
     },
     {
       path: '/auth',
@@ -71,42 +89,15 @@ function makeRouter(store) {
       },
     },
     {
-      path: '/openid',
-      name: 'OpenID',
+      path: '/logout',
+      name: 'SessionLost',
       components: {
-        default: () => import(/* webpackChunkName: "adicionais" */ '../views/Markdown.vue'),
+        default: () => import(/* webpackChunkName: "adicionais" */ '../views/Logout.vue'),
         sidebar: Sidebar,
         header: TopHeader,
       },
       meta: {
         isPublic: true,
-        file: 'OpenID.md',
-      },
-    },
-    {
-      path: '/projetos',
-      name: 'Projetos',
-      components: {
-        default: () => import(/* webpackChunkName: "adicionais" */ '../views/Markdown.vue'),
-        sidebar: Sidebar,
-        header: TopHeader,
-      },
-      meta: {
-        isPublic: true,
-        file: 'README.md',
-      },
-    },
-    {
-      path: '/sobre',
-      name: 'Sobre',
-      components: {
-        default: () => import(/* webpackChunkName: "adicionais" */ '../views/Markdown.vue'),
-        sidebar: Sidebar,
-        header: TopHeader,
-      },
-      meta: {
-        isPublic: true,
-        file: 'app/client/README.md',
       },
     },
   ];
@@ -126,8 +117,13 @@ function makeRouter(store) {
     router.push('/public');
   });
 
+  // Adicionar middleware do vuex-oidc
   router.beforeEach(vuexOidcCreateRouterMiddleware(store, 'auth'));
   return router;
 }
+
+window.addEventListener('vuexoidc:oidcError', (...ar) => {
+  console.error(ar, 'erro OIDC');
+});
 
 export default makeRouter;

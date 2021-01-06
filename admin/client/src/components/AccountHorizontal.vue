@@ -1,6 +1,6 @@
 <template>
   <span>
-    <img :src="account.picture" alt="profile" class="rounded-circle me-1">
+    <img :src="account.picture" alt="" class="rounded-circle me-3">
     <span class="d-none d-md-inline-block">{{ account.given_name }}</span>
     <small class="ms-2" v-if="logout">
       <router-link to="Logout" custom v-slot="{ href, navigate }">

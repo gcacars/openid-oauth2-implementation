@@ -3,17 +3,7 @@
     <button class="btn d-md-none me-2" type="button" @click="alternarMenu">
       <b-icon-list class="me-1" />
     </button>
-    <div class="input-group me-3">
-      <div class="input-group-text">
-        <b-icon-search class="me-1" />
-      </div>
-      <input class="form-control" type="text" placeholder="Pesquisar" aria-label="Pesquisar"
-             v-model="q">
-      <button class="btn btn-outline-primary" type="button" v-if="q" @click="q = ''">
-        &times;
-      </button>
-      <button class="btn btn-primary" type="button" v-if="q">Pesquisar</button>
-    </div>
+    <span class="w-100 display-6 text-black-50">{{ title }}</span>
     <div class="dropdown">
       <button type="button" data-bs-toggle="dropdown" id="notifications"
               class="btn mx-2" aria-expanded="false">
@@ -35,14 +25,29 @@
     </div>
     <div class="dropdown" v-if="oidcIsAuthenticated && oidcUser">
       <button type="button" data-bs-toggle="dropdown" id="user-menu"
-              class="btn mx-2 text-nowrap dropdown-toggle" aria-expanded="false">
+              class="btn ms-2 text-nowrap dropdown-toggle" aria-expanded="false">
         <account-horizontal :account="oidcUser" />
       </button>
       <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="user-menu">
-        <li><a class="dropdown-item" href="#">Perfil</a></li>
+        <li><a class="dropdown-item" href="#">Histórico de atividades</a></li>
         <li><hr class="dropdown-divider"></li>
-        <li><a class="dropdown-item" href="#" @click.prevent="signOutSilent">Sair e ficar</a></li>
-        <li><a class="dropdown-item" href="#" @click.prevent="signOut">Sair</a></li>
+        <li>
+          <a class="dropdown-item d-flex justify-content-between align-items-center" 
+             href="https://account-admin.dev.br" target="_blank">
+            Provedor de identidade
+            <b-icon-box-arrow-up-right class="ms-2" />
+          </a>
+        </li>
+        <li>
+          <a class="dropdown-item d-flex justify-content-between align-items-center" 
+             href="https://apprp.dev.br/" target="_blank">
+            Aplicação exemplo
+            <b-icon-box-arrow-up-right class="ms-2" />
+          </a>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item" href="#">Meu perfil</a></li>
+        <li><a class="dropdown-item" href="#" @click.prevent="signOutSilent">Sair</a></li>
       </ul>
     </div>
     <button type="button" class="btn" @click="authenticateOidcPopup" v-else>
@@ -57,7 +62,7 @@
 
 <script>
 import { mapGetters, mapActions } from 'vuex';
-import { BIconBell, BIconSearch, BIconList } from 'bootstrap-icons-vue';
+import { BIconBell, BIconSearch, BIconList, BIconBoxArrowUpRight } from 'bootstrap-icons-vue';
 import AccountHorizontal from './AccountHorizontal.vue';
 
 const listenEvents = [
@@ -76,6 +81,7 @@ export default {
     BIconList,
     BIconBell,
     BIconSearch,
+    BIconBoxArrowUpRight,
     AccountHorizontal,
   },
 
@@ -90,6 +96,9 @@ export default {
       'oidcIsAuthenticated',
       'oidcUser',
     ]),
+    title() {
+      return this.$route?.meta?.title;
+    },
     hasAccess: () => this.oidcIsAuthenticated || this.$route.meta.isPublic,
     recentNotifications() {
       return [...this.notifications].sort((a, b) => a.ts < b.ts);
@@ -141,12 +150,6 @@ export default {
     automaticSilentRenewError() {
       this.alertar('Erro ao renovar token');
       this.notify('Erro ao renovar token');
-    },
-    signOut() {
-      // Remover usuário da sessão local e fazer o logout
-      this.removeOidcUser().then(() => {
-        this.signOutOidc();
-      });
     },
     signOutSilent() {
       // Remover usuário da sessão local e fazer o logout

@@ -8,6 +8,7 @@ import { Provider, errors } from 'oidc-provider';
 import { nanoid } from 'nanoid';
 import base64url from 'base64url';
 // import { RedisAdapter } from './src/adapters/redis';
+import ConsoleAdapter from './src/adapters/console';
 import Account from './src/app/Account';
 import lowdb from './src/data/lowdb';
 import jwks from './src/jwks.json';
@@ -35,13 +36,14 @@ const configuration = {
   // Armazenamento persistente
   // (usando uma instância grátis de dev na cloud: https://redislabs.com/try-free/)
   // adapter: RedisAdapter,
+  // adapter: ConsoleAdapter,
 
   // Contas
   findAccount: account.findAccount.bind(account),
 
   // Vamos informar as claims suportadas para cada escopo
   claims: {
-    openid: ['sub', 'given_name'],
+    openid: ['sub', 'given_name', 'picture'],
     address: ['address'],
     email: ['email', 'email_verified'],
     phone: ['phone_number', 'phone_number_verified'],
@@ -57,8 +59,8 @@ const configuration = {
     // Interação (telas)
     devInteractions: { enabled: false },
     // Funcionalidades
-    backchannelLogout: { enabled: true },
-    frontchannelLogout: { enabled: true },
+    backchannelLogout: { enabled: true, ack: 'draft-06' },
+    frontchannelLogout: { enabled: true, ack: 'draft-04' },
     deviceFlow: { enabled: false },
     jwtUserinfo: { enabled: true },
     pushedAuthorizationRequests: {
@@ -66,9 +68,9 @@ const configuration = {
       requirePushedAuthorizationRequests: false,
     },
     registration: {
-      enabled: false,
-      idFactory: () => nanoid(), // como gerar um ID para um cliente novo
-      initialAccessToken: false, // ou uma string simulando um token
+      enabled: true,
+      idFactory: () => nanoid(), // como gerar um ID para um software novo
+      initialAccessToken: 'token-inicial', // ou uma string simulando um token
       policies: { // políticas para registro de um novo app
         /**
          * Exemplo de política
@@ -93,7 +95,7 @@ const configuration = {
       secretFactory: (ctx) => base64url(Buffer.from(crypto.randomBytes(64), 'utf-8')),
     },
     registrationManagement: {
-      enabled: false,
+      enabled: true,
       /**
        * Retorna um booleano indicando que o access token de registro deve ou não ser renovado.
        * @param {import('@types/koa').Context} ctx contexto no koa da requisição
@@ -106,6 +108,7 @@ const configuration = {
       enabled: true,
       keepHeaders: false,
       scriptNonce: (ctx) => undefined,
+      ack: 'draft-30',
     },
     userinfo: { enabled: true },
     // Token
@@ -236,7 +239,7 @@ const configuration = {
   // Metadados adicionais que um cliente pode ter
   extraClientMetadata: {
     // Lista de propriedades adicionais
-    properties: ['web_app_type', 'usoInterno', 'terceiro', 'tenantId'],
+    properties: ['web_app_type', 'usoInterno', 'terceiro', 'tenantId', 'nx_type'],
 
     // Validação das propriedades
     validator(chave, valor, metadado) {
@@ -258,7 +261,7 @@ const configuration = {
 
         case 'tenantId':
           // Deve ter um ID de locatário
-          if (!metadado.tenantId) throw new Error('Clientes devem ter um ID de locatário');
+          if (!metadado.tenantId && metadado.nx_type === 'business') throw new Error('Clientes devem ter um ID de locatário');
           break;
 
         default:
@@ -335,7 +338,7 @@ const configuration = {
     return crypto.createHash('sha256')
       .update(client.sectorIdentifier)
       .update(accountId)
-      .update(client.tenantId) // personalizado
+      // .update(client.tenantId?.toString() || '') // personalizado
       .digest('hex');
   },
 
@@ -601,55 +604,106 @@ const configuration = {
     revocation_endpoint_auth_method: 'client_secret_jwt',
   },
 
-  clients: [{
-    // Apresentação
-    client_name: 'Aplicação Exemplo',
-    logo_uri: 'https://placeholder.com/wp-content/uploads/2018/10/placeholder.com-logo3.png',
-    policy_uri: 'https://apprp.dev.br/politica-privacidade',
-    tos_uri: 'https://apprp.dev.br/termos-servico',
+  clients: [
+    {
+      // Apresentação
+      client_name: 'Aplicação Exemplo',
+      logo_uri: 'https://placeholder.com/wp-content/uploads/2018/10/placeholder.com-logo3.png',
+      policy_uri: 'https://apprp.dev.br/politica-privacidade',
+      tos_uri: 'https://apprp.dev.br/termos-servico',
 
-    // Configurações do cliente
-    application_type: 'web',
-    client_id: 'app',
-    client_secret: 'bem-secreto',
-    client_uri: 'https://apprp.dev.br/',
-    redirect_uris: [
-      'https://apprp.dev.br/',
-      'https://apprp.dev.br/cb',
-      'https://apprp.dev.br/auth',
-      'https://apprp.dev.br/authp',
-      'https://apprp.dev.br/s.html',
-      'https://apprp.dev.br/logout',
-      'https://apprp.dev.br/pre-tela',
-    ],
-    // initiate_login_uri: 'https://apprp.dev.br/pre-tela',
-    post_logout_redirect_uris: [
-      'https://apprp.dev.br/logout',
-    ],
-    sector_identifier_uri: 'https://apprp.dev.br/',
-    subject_type: 'public',
+      // Configurações do cliente
+      application_type: 'web',
+      client_id: 'app',
+      client_secret: 'bem-secreto',
+      client_uri: 'https://apprp.dev.br/',
+      redirect_uris: [
+        'https://apprp.dev.br/',
+        'https://apprp.dev.br/cb',
+        'https://apprp.dev.br/auth',
+        'https://apprp.dev.br/authp',
+        'https://apprp.dev.br/s.html',
+        'https://apprp.dev.br/logout',
+        'https://apprp.dev.br/pre-tela',
+      ],
+      // initiate_login_uri: 'https://apprp.dev.br/pre-tela',
+      post_logout_redirect_uris: [
+        'https://apprp.dev.br/logout',
+      ],
+      sector_identifier_uri: 'https://apprp.dev.br/',
+      subject_type: 'public',
 
-    // Configurações do OpenID ou OAuth
-    response_types: ['code', 'code id_token', 'id_token', 'code id_token token'],
-    grant_types: ['authorization_code', 'implicit'],
-    scope: 'openid email phone profile',
-    token_endpoint_auth_method: 'none',
-    revocation_endpoint_auth_method: 'client_secret_jwt',
+      // Configurações do OpenID ou OAuth
+      response_types: ['code', 'code id_token', 'id_token', 'code id_token token'],
+      grant_types: ['authorization_code', 'implicit'],
+      scope: 'openid email phone profile',
+      token_endpoint_auth_method: 'none',
+      revocation_endpoint_auth_method: 'client_secret_jwt',
 
-    // Configurações do token
-    default_max_age: 3600,
-    require_auth_time: false,
+      // Configurações do token
+      default_max_age: 3600,
+      require_auth_time: false,
 
-    // Segurança
-    // jwks_uri: '',
-    id_token_signed_response_alg: 'RS256',
-    userinfo_signed_response_alg: 'RS256',
+      // Segurança
+      // jwks_uri: '',
+      id_token_signed_response_alg: 'RS256',
+      userinfo_signed_response_alg: 'RS256',
 
-    // Administrativo
-    contacts: ['admin-aplicativo@exemplo.com.br'],
-    web_app_type: 'spa',
-    tenantId: 123,
-  }],
+      // Administrativo
+      contacts: ['admin-aplicativo@exemplo.com.br'],
+      web_app_type: 'spa',
+      nx_type: 'business',
+      tenantId: 123,
+    },
+    {
+      // Apresentação
+      client_name: 'Painel administrativo',
+      logo_uri: 'https://placeholder.com/wp-content/uploads/2018/10/placeholder.com-logo3.png',
+      policy_uri: 'https://admin-op.dev.br/politica-privacidade',
+      tos_uri: 'https://admin-op.dev.br/termos-servico',
+
+      // Configurações do cliente
+      application_type: 'web',
+      client_id: 'admin',
+      client_secret: 'bem-secreto2',
+      client_uri: 'https://admin-op.dev.br/',
+      redirect_uris: [
+        'https://admin-op.dev.br/',
+        'https://admin-op.dev.br/cb',
+        'https://admin-op.dev.br/auth',
+        'https://admin-op.dev.br/authp',
+        'https://admin-op.dev.br/s.html',
+        'https://admin-op.dev.br/logout',
+        'https://admin-op.dev.br/pre-tela',
+      ],
+      // initiate_login_uri: 'https://admin-op.dev.br/pre-tela',
+      post_logout_redirect_uris: [
+        'https://admin-op.dev.br/logout',
+      ],
+      sector_identifier_uri: 'https://admin-op.dev.br/',
+      subject_type: 'public',
+
+      // Configurações do OpenID ou OAuth
+      response_types: ['code', 'code id_token', 'id_token', 'code id_token token'],
+      grant_types: ['authorization_code', 'implicit'],
+      scope: 'openid email phone profile',
+      token_endpoint_auth_method: 'none',
+      revocation_endpoint_auth_method: 'client_secret_jwt',
+
+      // Configurações do token
+      default_max_age: 3600,
+      require_auth_time: false,
+
+      // Segurança
+      // jwks_uri: '',
+      id_token_signed_response_alg: 'RS256',
+      userinfo_signed_response_alg: 'RS256',
+
+      // Administrativo
+      contacts: ['admin-aplicativo@exemplo.com.br'],
+      web_app_type: 'spa',
+    },
+  ],
 };
 
 // Segurança
@@ -660,6 +714,8 @@ function handleClientAuthErrors({ headers: { authorization }, oidc: { body, clie
     console.log(err, 'client');
     // save error details out-of-bands for the client developers, `authorization`, `body`, `client`
     // are just some details available, you can dig in ctx object for more.
+  } else {
+    console.error(err);
   }
 }
 
@@ -668,9 +724,20 @@ const oidc = new Provider('https://api.provider.dev.br', configuration);
 oidc.keys = secureKeys;
 oidc.proxy = true;
 // oidc.use(helmet);
-oidc.on('grant.error', handleClientAuthErrors);
 oidc.on('introspection.error', handleClientAuthErrors);
 oidc.on('revocation.error', handleClientAuthErrors);
+oidc.on('authorization.error', handleClientAuthErrors);
+oidc.on('backchannel.error', handleClientAuthErrors);
+oidc.on('jwks.error', handleClientAuthErrors);
+oidc.on('check_session_origin.error', handleClientAuthErrors);
+oidc.on('check_session.error', handleClientAuthErrors);
+oidc.on('discovery.error', handleClientAuthErrors);
+oidc.on('end_session.error', handleClientAuthErrors);
+oidc.on('grant.error', handleClientAuthErrors);
+oidc.on('registration_create.error', handleClientAuthErrors);
+oidc.on('registration_read.error', handleClientAuthErrors);
+oidc.on('server_error', handleClientAuthErrors);
+oidc.on('userinfo.error', handleClientAuthErrors);
 
 oidc.on('authorization.accepted', (ctx) => {
   const { client, params } = ctx.oidc;
@@ -685,7 +752,7 @@ oidc.on('authorization.accepted', (ctx) => {
 const app = new Koa();
 app.proxy = true;
 // app.use(helmet);
-const allowedHosts = ['https://provider.dev.br', 'https://apprp.dev.br/'];
+const allowedHosts = ['https://provider.dev.br', 'https://apprp.dev.br/', 'https://admin-op.dev.br/'];
 app.use(KoaCors({
   // eslint-disable-next-line arrow-body-style
   origin: (ctx) => {

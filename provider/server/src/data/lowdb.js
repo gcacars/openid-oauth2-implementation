@@ -22,6 +22,14 @@ try {
         picture_url: 'https://randomuser.me/api/portraits/men/40.jpg',
         tenantId: 2,
       },
+      {
+        _id: 'e3fc2b4a-2262-4e2f-847a-a40dd3ca1s13',
+        firstName: 'Admin',
+        email: 'admin@exemplo.com.br',
+        email_verified: false,
+        picture_url: 'https://randomuser.me/api/portraits/men/15.jpg',
+        tenantId: 0,
+      },
     ],
 
     scopes: [
