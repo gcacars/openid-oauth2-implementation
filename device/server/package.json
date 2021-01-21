@@ -1,0 +1,41 @@
+{
+  "name": "device-server",
+  "version": "1.0.0",
+  "description": "Device server app (back-end) to test OAuth Device Flow",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon -r esm ./src/index.js",
+    "debug": "$Env:DEBUG=\"*\"; nodemon -r esm ./src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nexsolab/poc-auth-server.git"
+  },
+  "keywords": [
+    "device",
+    "oauth",
+    "rfc8628",
+    "flow"
+  ],
+  "author": "Gabriel Anderson",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/nexsolab/poc-auth-server/issues"
+  },
+  "homepage": "https://github.com/nexsolab/poc-auth-server#readme",
+  "dependencies": {
+    "@koa/cors": "^3.1.0",
+    "esm": "^3.2.25",
+    "koa": "^2.13.1",
+    "openid-client": "^4.2.2",
+    "qrcode": "^1.4.4",
+    "socket.io": "^3.1.0",
+    "socket.io-client": "^3.1.0"
+  },
+  "devDependencies": {
+    "eslint": "^7.18.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.22.1"
+  }
+}

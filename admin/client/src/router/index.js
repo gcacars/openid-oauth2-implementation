@@ -61,10 +61,6 @@ function makeRouter(store) {
       component: OidcPopupCallback,
     },
     {
-      path: '/logout',
-      name: 'Logout',
-    },
-    {
       path: '/auth-error',
       name: 'oidcError',
       components: {

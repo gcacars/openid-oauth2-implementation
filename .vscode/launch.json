@@ -25,6 +25,26 @@
       "trace": true
     },
     {
+      "type": "node",
+      "request": "launch",
+      "name": "Device Server",
+      "cwd": "${workspaceFolder}\\device\\server",
+      "runtimeExecutable": "nodemon",
+      "args": [
+        "--preserve-symlinks",
+        "-r",
+        "esm",
+        "./src/index.js",
+        "--inspect"
+      ],
+      "outputCapture": "std",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "envFile": "${workspaceFolder}/.env",
+      "trace": true
+    },
+    {
       "type": "pwa-node",
       "request": "launch",
       "name": "Launch Program",

@@ -1,0 +1,170 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start NGINX",
+      "type": "shell",
+      "group": "none",
+      "command": "./nginx",
+      "windows": {
+        "options": {
+          "cwd": "E:\\Projetos\\nexso\\nginx-1.19.6"
+        }
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "new",
+        "showReuseMessage": false,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "runOptions": {
+        "instanceLimit": 1,
+      },
+      "isBackground": true
+    },
+    {
+      "type": "npm",
+      "script": "serve",
+      "path": "provider/client/",
+      "problemMatcher": [],
+      "label": "Tela do provedor OpenID",
+      "detail": "vue-cli-service serve",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new",
+        "showReuseMessage": false,
+        "clear": true,
+        "group": "dev"
+      },
+      "runOptions": {
+        "instanceLimit": 1,
+      },
+      "isBackground": false
+    },
+    {
+      "type": "npm",
+      "script": "start",
+      "path": "provider/server/",
+      "problemMatcher": [],
+      "label": "Servidor de autorização",
+      "detail": "nodemon -r esm index.js",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new",
+        "showReuseMessage": false,
+        "clear": true,
+        "group": "dev"
+      },
+      // "dependsOn": ["Tela do provedor OpenID"],
+      "runOptions": {
+        "instanceLimit": 1,
+      },
+      "isBackground": false
+    },
+    {
+      "type": "npm",
+      "script": "serve",
+      "path": "admin/client/",
+      "problemMatcher": [],
+      "label": "Tela de Admin do OP",
+      "detail": "vue-cli-service serve",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new",
+        "showReuseMessage": false,
+        "clear": true,
+        "group": "dev"
+      },
+      // "dependsOn": ["Servidor de autorização"],
+      "runOptions": {
+        "instanceLimit": 1,
+      },
+      "isBackground": false
+    },
+    {
+      "type": "npm",
+      "script": "serve",
+      "path": "app/client/",
+      "problemMatcher": [],
+      "label": "Aplicação de Exemplo",
+      "detail": "vue-cli-service serve",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new",
+        "showReuseMessage": false,
+        "clear": true,
+        "group": "dev"
+      },
+      // "dependsOn": ["Servidor de autorização"],
+      "runOptions": {
+        "instanceLimit": 2,
+      },
+      "isBackground": false
+    },
+    {
+      "type": "npm",
+      "script": "serve",
+      "path": "device/client/",
+      "problemMatcher": [],
+      "label": "Tela do dispositivo OpenID",
+      "detail": "vue-cli-service serve",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new",
+        "showReuseMessage": false,
+        "clear": true,
+        "group": "dev"
+      },
+      "runOptions": {
+        "instanceLimit": 1,
+      },
+      "isBackground": false
+    },
+    {
+      "type": "npm",
+      "script": "start",
+      "path": "device/server/",
+      "problemMatcher": [],
+      "label": "Servidor do dispositivo",
+      "detail": "nodemon -r esm index.js",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new",
+        "showReuseMessage": false,
+        "clear": true,
+        "group": "dev"
+      },
+      // "dependsOn": ["Tela do provedor OpenID"],
+      "runOptions": {
+        "instanceLimit": 1,
+      },
+      "isBackground": false
+    },
+    {
+      "label": "Executar tudo",
+      "dependsOn": [
+        "Start NGINX",
+        "Servidor de autorização",
+        "Tela do provedor OpenID",
+        "Tela de Admin do OP",
+        "Aplicação de Exemplo"
+      ],
+      "isBackground": false
+    }
+  ]
+}

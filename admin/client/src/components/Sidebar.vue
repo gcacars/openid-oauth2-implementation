@@ -1,16 +1,16 @@
 <template>
   <nav class="sidebar d-flex flex-column">
-    <div class="mt-4 me-0 text-center">
+    <div class="my-4 text-center">
       <router-link to="/" custom v-slot="{ href, navigate }">
         <a class="fs-4 fw-bold link-light text-decoration-none" :href="href" @click="navigate">
           Painel administrativo
         </a>
       </router-link>
     </div>
-    <div class="sidebar-sticky row" v-if="oidcIsAuthenticated">
-      <div v-for="group in menu" :key="group.id">
-        <small class="d-block text-muted text-uppercase fw-bolder ms-3 mt-4 mb-2"
-               v-if="group.label">
+    <div class="sidebar-sticky row h-100" v-if="oidcIsAuthenticated">
+      <div v-for="(group, idx) in menu" :key="group.id">
+        <small class="d-block text-muted text-uppercase fw-bolder ms-3 mb-2"
+               v-if="group.label" :class="{ 'mt-4': idx > 0 }">
           {{ group.label }}
         </small>
         <ul class="nav nav-pills flex-column">

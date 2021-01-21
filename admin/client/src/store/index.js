@@ -2,6 +2,8 @@
 import { createStore, createLogger } from 'vuex';
 import { vuexOidcCreateStoreModule } from 'vuex-oidc';
 import oidcSettings from '../config/oidc';
+import { store as ClientStore, mountStore } from './modules/reg/client-store';
+import ConfigurationStore from './modules/conf/configuration-store';
 
 const debug = process.env.NODE_ENV !== 'production' && !process.env.JEST_WORKER_ID;
 
@@ -36,6 +38,19 @@ const store = createStore({
       oidcError: (payload) => console.info('OIDC error', payload),
       automaticSilentRenewError: (payload) => console.info('OIDC automaticSilentRenewError', payload),
     }),
+    registration: {
+      modules: {
+        client: ClientStore,
+        clientDefault: mountStore({
+          logo_uri: 'default.jpg',
+        }),
+      },
+    },
+    configuration: {
+      modules: {
+        config: ConfigurationStore,
+      },
+    },
   },
   strict: debug,
   plugins: debug ? [createLogger()] : [],

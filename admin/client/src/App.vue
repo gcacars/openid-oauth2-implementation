@@ -3,7 +3,7 @@
     <div class="row justify-content-end">
       <router-view name="sidebar" class="col-8 col-md-4 col-lg-3 col-xl-2" />
 
-      <main class="col-md-8 col-lg-9 col-xl-10 ps-4" id="main">
+      <main class="col-md-8 col-lg-9 col-xl-10 px-4 pb-4" id="main">
         <router-view name="header" class="mb-2 mb-md-4" />
 
         <router-view v-slot="{ Component }">

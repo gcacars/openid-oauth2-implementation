@@ -6,3 +6,5 @@ openssl req -subj '/CN=admin-op.dev.br/O=OpenID Admin Front-end/C=BR' -new -newk
 openssl req -subj '/CN=api.admin-op.dev.br/O=OpenID Admin API/C=BR' -new -newkey rsa:2048 -sha256 -days 365 -nodes -x509 -keyout admin-op-api.key -out admin-op-api.crt
 openssl req -subj '/CN=account-admin.dev.br/O=Administrador de contas Front-end/C=BR' -new -newkey rsa:2048 -sha256 -days 365 -nodes -x509 -keyout account-admin.key -out account-admin.crt
 openssl req -subj '/CN=api.account-admin.dev.br/O=Administrador de contas API/C=BR' -new -newkey rsa:2048 -sha256 -days 365 -nodes -x509 -keyout account-admin-api.key -out account-admin-api.crt
+openssl req -subj '/CN=device.dev.br/O=OpenID device front-end/C=BR' -new -newkey rsa:2048 -sha256 -days 365 -nodes -x509 -keyout device.key -out device.crt
+openssl req -subj '/CN=api.device.dev.br/O=OpenID device back-end/C=BR' -new -newkey rsa:2048 -sha256 -days 365 -nodes -x509 -keyout device-api.key -out device-api.crt

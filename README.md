@@ -46,6 +46,8 @@ Estudos sobre a criação de um servidor de autenticação usando OpenID Connect
     127.0.0.1 api.admin-op.dev.br
     127.0.0.1 account-admin.dev.br
     127.0.0.1 api.account-admin.dev.br
+    127.0.0.1 device.dev.br
+    127.0.0.1 api.device.dev.br
     ```
 
 6. Executar o nginx: `./nginx.exe`.
@@ -54,12 +56,13 @@ Estudos sobre a criação de um servidor de autenticação usando OpenID Connect
 
 ### Projetos
 
-Esta solução tem 4 projetos:
+Esta solução tem 5 projetos:
 
 - Servidor de autorização (Authorization Server / OpenID Provider)
 - Provedor de identidade (Identity Provider - IdP)
 - Painel administrativo
 - Aplicação de exemplo
+- Dispositivo de exemplo
 
 ### Design
 
@@ -80,6 +83,8 @@ Cada projeto, pode ter dois subprojetos:
 |./account/client|Provedor de identidade|Telas do painel administrativo para gerenciar as contas, cadastros, dados...|6060|
 |./app/server|Aplicação Exemplo|A API da aplicação de exemplo que usará os serviços de identidade do servidor de autenticação.|7000|
 |./app/client|Aplicação Exemplo|As telas simples da aplicação de exemplo.|7070|
+|./device/server|Dispositivo Exemplo|A API do dispositivo de exemplo que usará os serviços de identidade do servidor de autenticação.|9000|
+|./device/client|Dispositivo Exemplo|As telas simples do dispositivo de exemplo.|9090|
 
 Dessa forma obtemos um menor custo e com recursos totalmente gerenciados pela cloud.
 

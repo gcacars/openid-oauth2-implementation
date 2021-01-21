@@ -7,8 +7,8 @@ import KoaMount from 'koa-mount';
 import { Provider, errors } from 'oidc-provider';
 import { nanoid } from 'nanoid';
 import base64url from 'base64url';
-// import { RedisAdapter } from './src/adapters/redis';
-import ConsoleAdapter from './src/adapters/console';
+import { RedisAdapter } from './src/adapters/redis';
+// import ConsoleAdapter from './src/adapters/console';
 import Account from './src/app/Account';
 import lowdb from './src/data/lowdb';
 import jwks from './src/jwks.json';
@@ -35,7 +35,7 @@ const account = new Account(lowdb);
 const configuration = {
   // Armazenamento persistente
   // (usando uma instância grátis de dev na cloud: https://redislabs.com/try-free/)
-  // adapter: RedisAdapter,
+  adapter: RedisAdapter,
   // adapter: ConsoleAdapter,
 
   // Contas
@@ -61,7 +61,17 @@ const configuration = {
     // Funcionalidades
     backchannelLogout: { enabled: true, ack: 'draft-06' },
     frontchannelLogout: { enabled: true, ack: 'draft-04' },
-    deviceFlow: { enabled: false },
+    deviceFlow: {
+      charset: 'base-20',
+      enabled: true,
+      deviceInfo(ctx) {
+        return {
+          ip: ctx.ip,
+          ua: ctx.get('user-agent'),
+        };
+      },
+      mask: '****-****',
+    },
     jwtUserinfo: { enabled: true },
     pushedAuthorizationRequests: {
       enabled: false,
@@ -320,7 +330,8 @@ const configuration = {
   // Função para determinar se um token de atualização pode ser emitido
   async issueRefreshToken(ctx, client, code) {
     console.log('Checando se um refresh token pode ser emitido');
-    return client.grantTypeAllowed('refresh_token') && code.scopes.has('offline_access');
+    // return client.grantTypeAllowed('refresh_token') && code.scopes.has('offline_access');
+    return true;
   },
 
   // ...
@@ -352,6 +363,8 @@ const configuration = {
   // Indica se deve fazer a rotação de um token de atualização ou não
   rotateRefreshToken(ctx) {
     const { refreshToken, client } = ctx.oidc.entities;
+    if (!refreshToken) return false;
+
     // Pega o máximo de tempo que um token pode ser rotacionado.
     // Nesse caso é 1 ano, depois ele vai expirar finalmente.
     if (refreshToken.totalLifetime() >= 365.25 * 24 * 60 * 60) {
@@ -685,10 +698,11 @@ const configuration = {
 
       // Configurações do OpenID ou OAuth
       response_types: ['code', 'code id_token', 'id_token', 'code id_token token'],
-      grant_types: ['authorization_code', 'implicit'],
+      grant_types: ['authorization_code', 'implicit', 'refresh_token'],
       scope: 'openid email phone profile',
       token_endpoint_auth_method: 'none',
       revocation_endpoint_auth_method: 'client_secret_jwt',
+      introspection_endpoint_auth_method: 'tls_client_auth',
 
       // Configurações do token
       default_max_age: 3600,
@@ -702,6 +716,31 @@ const configuration = {
       // Administrativo
       contacts: ['admin-aplicativo@exemplo.com.br'],
       web_app_type: 'spa',
+    },
+    {
+      // Apresentação
+      client_name: 'Deviceflix',
+      logo_uri: 'https://placeholder.com/wp-content/uploads/2018/10/placeholder.com-logo3.png',
+      policy_uri: 'https://device.dev.br/politica-privacidade',
+      tos_uri: 'https://device.dev.br/termos-servico',
+
+      // Configurações do cliente
+      client_id: 'device',
+      client_secret: 'dispositivo',
+      client_uri: 'https://device.dev.br/',
+      sector_identifier_uri: 'https://api.device.dev.br/',
+      redirect_uris: ['https://api.device.dev.br'],
+      subject_type: 'public',
+
+      // Configurações do OpenID ou OAuth
+      // response_types: ['code', 'code id_token', 'id_token', 'code id_token token'],
+      grant_types: [
+        'authorization_code', 'refresh_token', 'urn:ietf:params:oauth:grant-type:device_code',
+      ],
+      // scope: 'openid email phone profile',
+      // token_endpoint_auth_method: 'none',
+      revocation_endpoint_auth_method: 'client_secret_jwt',
+      introspection_endpoint_auth_method: 'tls_client_auth',
     },
   ],
 };

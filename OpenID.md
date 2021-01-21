@@ -197,7 +197,7 @@ Pragma: no-cache
 |---|---|
 |`access_token`|Deve existir.|
 |`token_type`|Deve ser `Bearer`.|
-|`id_token`|Deve existir e validar conforme [descrito abaixo](#validacao-do-id-token).|
+|`id_token`|Deve existir e validar conforme [descrito abaixo](#validação-do-id-token).|
 |`expires_in`|Segundos em que o token irá expirar após a requisição.|
 |`refresh_token`|Token que pode ser usado para renovar o atual após a expiração.|
 |`scope`|Deve existir se foi informado na requisição, e deverá ser idêntico.|
@@ -209,14 +209,14 @@ Pragma: no-cache
 
 ##### Requisição implícita
 
-A requisição de autenticação implícita, acontece da mesma forma que a [requisição de autorização por código de autorização](#requisicao_da_autenticacao), exceto por alguns parâmetros diferentes:
+A requisição de autenticação implícita, acontece da mesma forma que a [requisição de autorização por código de autorização](#requisição-da-autenticação), exceto por alguns parâmetros diferentes:
 
 |Parâmetro|Valor e descrição|
 |---|---|
 |`response_type`|Deve ser `id_token token`.|
 |`nonce`|Se torna obrigatório ser informado.|
 
-A validação e outros processos ocorrem da mesma forma que a [requisição de autorização por código de autorização](#requisicao_da_autenticacao), porém ao obter uma resposta, no redirecionamento de volta para a aplicação é enviados todos os parâmetros direto na URL:
+A validação e outros processos ocorrem da mesma forma que a [requisição de autorização por código de autorização](#requisição-da-autenticação), porém ao obter uma resposta, no redirecionamento de volta para a aplicação é enviados todos os parâmetros direto na URL:
 
 |Parâmetro|Descrição|
 |---|---|
@@ -286,9 +286,9 @@ Esses parâmetros adicionais estarão presentes no ID Token recebido:
 
 #### 3. Autenticação híbrida
 
-A autenticação híbrida é uma mistura do implícito e do código de autorização, recebendo assim alguns tokens direto na URL de callback e outros através da [requisição de Token](#requisicao_de_token).
+A autenticação híbrida é uma mistura do implícito e do código de autorização, recebendo assim alguns tokens direto na URL de callback e outros através da [requisição de Token](#requisição-de-token).
 
-A requisição, assim como outros processos, também acontece da mesma forma que a [requisição de autorização por código de autorização](#requisicao_da_autenticacao), exceto que:
+A requisição, assim como outros processos, também acontece da mesma forma que a [requisição de autorização por código de autorização](#requisição-da-autenticação), exceto que:
 
 |Parâmetro|Valor e descrição|
 |---|---|
@@ -302,7 +302,115 @@ O tipo escolhido de resposta indicará o que irá retornar direto na URL de call
 |`id_token`|Retorna o token de ID para identificação do usuário.|
 |`token`|Retorna o token de acesso.|
 
-Os tokens que não são retornados diretamente, podem ser obtidos usando o code na [requisição de token](#requisicao_de_token).
+Os tokens que não são retornados diretamente, podem ser obtidos usando o code na [requisição de token](#requisição-de-token).
+
+#### 4. Fluxo do dispositivo [RFC 8628](https://tools.ietf.org/html/rfc8628)
+
+Este fluxo acontece quando temos dispositivos conectados à Internet que não possuem um navegador ou não tem uma forma de escrever dados (como a falta de um teclado, por exemplo). Ele permite que os clientes OAuth presentes nestes dispositivos (como Smart TVs, quadros digitais e impressoras) possam obter um token de acesso.
+
+Para que isso ocorra, é importante assegurar que:
+
+- Os dispositivo está conectado à Internet e pode fazer chamadas HTTPS de saída.
+- O dispositivo é capaz de exibir ou informar uma URI e um código para o usuário
+- O usuário tem um dispositivo secundário (como um PC ou smartphone) que possa interagir com a requisição.
+
+Após mostrar o código para o usuário, o dispositivo fica fazendo chamadas repetidas para o servidor de autorização até que ele obtenha acesso, se não houver uma forma de enviar requisições de entrada para o dispositivo.
+
+Normalmente o dispositivo só interage com um único servidor de autorização.
+
+##### 1. Autenticação do dispositivo
+
+###### 1.1 Requisição de códigos
+
+A primeira etapa, é o dispositivo solicitar os códigos de verificação para o servidor de autorização no endpoint de autenticação de dispositivos, informando o ID do cliente (`client_id`) e escopos (`scope`) desejados.
+
+```http
+POST /device_authorization HTTP/1.1
+Host: server.example.com
+Content-Type: application/x-www-form-urlencoded
+
+client_id=1406020730&scope=example_scope
+```
+
+> Todas as requisições devem ser feitas através de TLS/SSL.
+
+###### 1.2 Resposta de códigos
+
+O servidor de autorização responde com um JSON informando dois códigos de verificação: de dispositivo e de usuário que valem por determinado tempo.
+
+|Campo|Descrição|
+|---|---|
+|`device_code`|O código de verificação do dispositivo.|
+|`user_code`|O código de verificação do usuário.|
+|`verification_uri`|A URI que deve ser curta e será exibida para o usuário digitar em outro dispositivo.|
+|`verification_uri_complete`|Uma URI opcional que pode incluir o código de usuário (ou funcionalidade similar).|
+|`expires_in`|O tempo em segundos em que os códigos irão expirar.|
+|`interval`|O tempo em segundos em que o dispositivo deve aguardar antes de fazer uma nova requisição para o IdP, perguntando sobre o estado atual.<br>Por padrão esse valor é `5`.|
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+Cache-Control: no-store
+
+{
+  "device_code": "GmRhmhcxhwAzkoEqiMEg_DnyEysNkuNhszIySk9eS",
+  "user_code": "WDJB-MJHT",
+  "verification_uri": "https://example.com/device",
+  "verification_uri_complete":
+      "https://example.com/device?user_code=WDJB-MJHT",
+  "expires_in": 1800,
+  "interval": 5
+}
+```
+
+##### 2. Interação do usuário
+
+Quando o dispositivo recebe os códigos de verificação, ele deverá mostrar a URI de autorização (`verification_uri`) e o código de usuário (`user_code`) para o usuário, solicitando-o que acessa a URI em um outro dispositivo e para que digite o código informado.
+
+> Note que o código de verificação de dispositivo (`device_code`) não deve ser exibido!
+
+Quando o campo `verification_uri_complete` é recebido, o dispositivo pode exibi-lo de uma forma não textual (devido a URI longa e já informando o código de usuário), como por exemplo, exibindo um QR Code que irá abrir essa URL ou através de NFC. Porém é recomendável que o `verification_uri` continue sendo exibido.
+
+No servidor de autorização, deve fornecer uma tela para que seja informado o código de usuário. O servidor pode requisitar outros fluxos e processos antes, como solicitar a autenticação do usuário ou seu cadastro, solicitar um código OTP, entre outros.
+
+Após informar o código, ou após acessar a URI completa (via QR Code por exemplo), o servidor deverá exibir uma tela solicitando que o usuário aprove ou rejeite o uso daquele dispositivo.
+
+##### 3. O papel do dispositivo
+
+Enquanto o usuário interage com o servidor de autorização, o dispositivos faz chamadas repetidas até que o processo seja concluído, o token expire ou aconteça algum outro erro, respeitando o intervalo informado.
+
+###### 3.1 Requisição de token
+
+O dispositivo faz uma requisição no endpoint de token, porém informando o `grant_type` como `urn:ietf:params:oauth:grant-type:device_code` e o código de dispositivo:
+
+```http
+POST /token HTTP/1.1
+Host: server.example.com
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code
+&device_code=GmRhmhcxhwAzkoEqiMEg_DnyEysNkuNhszIySk9eS
+&client_id=1406020730
+```
+
+###### 3.2 Resposta do token
+
+Quando o usuário finalmente aprova e dá consentimento, o endpoint de token responde com os tokens de acordo com o informado acima [na requisição de token do fluxo de código de autorização](#requisição-de-token)
+
+Porém existe uma extensão dos erros padrões, conforme:
+
+|Código de erro|Descrição|Deve continuar? |
+|---|---|---|
+|authorization_pending|Informa que está aguardando uma interação do usuário ou ela está sendo feita no momento.|Sim|
+|slow_down|Informa que ainda está aguardando uma interação do usuário, porém o dispositivo deve aumentar o intervalo das próximas chamadas em 5 segundos.|Sim|
+|access_denied|O usuário recusou seu consentimento e o dispositivo não está permitido.|Não|
+|expired_token|O token informado já expirou.|Não|
+
+Quando o dispositivo recebe uma resposta de erro que não é possível continuar, então ele deve exibir alguma mensagem na tela para o usuário e deve parar de contactar o servidor para verificação.
+
+> Note que a especificação original aborda uma hipótese de que o dispositivo não consegue receber requisições de entrada. Porém, se suportado, pode-se adotar outras abordagens, como o uso de WebSockets - dessa forma o dispositivo recebe o evento de autorização ou erro sem ter que fazer chamadas repetidas.
+
+Se o dispositivo receber um erro de _timeout_, então é recomendado aumentar exponencialmente o intervalo para cada nova chamada com erro.
 
 ### ID Token
 
@@ -360,7 +468,7 @@ Alguns são padrões e estão definidos na [RFC7519](https://tools.ietf.org/html
 |`exp`|número|O timestamp (segundos desde 1970) de quando o token irá expirar.|
 |`auth_time`|número|Timestamp do momento em que o usuário foi autenticado.<br>Presente quando o cliente solicitou `require_auth_time`.|
 |`nonce`|texto|Um valor informado na requisição para validar o uso do token na sessão.|
-|`amr`|lista|Lista de identificadores de métodos de autenticação usados para autenticar o usuário. [Ver lista abaixo](#referencia_de_metodos_de_autenticacao)|
+|`amr`|lista|Lista de identificadores de métodos de autenticação usados para autenticar o usuário. [Ver lista abaixo](#referência-de-métodos-de-autenticação)|
 
 #### Atributos de usuário
 
@@ -498,7 +606,7 @@ Define como as aplicações cliente (_relying parties_) conseguem se registrar (
 |`userinfo_encrypted_response_enc`|Algoritmo criptográfico para usar no JWE para criptografar a resposta da _UserInfo_. (opcional)|
 |`jwks_uri`|URL do JSON Web Key Set da aplicação.|
 
-Os metadados `client_name`, `tos_uri`, `policy_uri`, `logo_uri`, `client_uri` podem ter opções em outros idiomas usando o # e o código do idioma [conforme descrito acima](#claims_em_varios_idiomas).
+Os metadados `client_name`, `tos_uri`, `policy_uri`, `logo_uri`, `client_uri` podem ter opções em outros idiomas usando o # e o código do idioma [conforme descrito acima](#claims-em-vários-idiomas).
 
 #### Requisição de Registro
 
@@ -776,7 +884,7 @@ Exemplo:
 
 ###### Validação do token de logout
 
-Deve seguir os mesmos passos da [validação do ID Token](#validacao-do-id-token) e ainda:
+Deve seguir os mesmos passos da [validação do ID Token](#validação-do-id-token) e ainda:
 
 |Claim ou item|Validação|
 |---|---|
