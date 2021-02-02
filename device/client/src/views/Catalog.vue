@@ -1,7 +1,7 @@
 <template>
   <div>
     <top-header class="mb-5" />
-    <div class="mb-5" v-for="(group, idx) in catalog">
+    <div class="mb-5" v-for="(group, idx) in catalog" :key="group.category">
       <h5>{{ $t(`catalog.${group.category}`) }}</h5>
       <hr class="my-3">
       <catalog-slide :items="group.specs" :selectedIndex="level === idx + 1 ? index : 0" />
@@ -41,7 +41,7 @@ export default {
           setTimeout(this.scroll, 20);
           break;
         }
-          
+
         case 'ArrowUp': {
           event.preventDefault();
           let level = this.level - 1;
@@ -50,7 +50,7 @@ export default {
           setTimeout(this.scroll, 20);
           break;
         }
-          
+
         case 'ArrowLeft': {
           event.preventDefault();
           let index = this.index - 1;
@@ -58,7 +58,7 @@ export default {
           this.index = index;
           break;
         }
-          
+
         case 'ArrowRight': {
           event.preventDefault();
           let index = this.index + 1;
@@ -66,13 +66,13 @@ export default {
           this.index = index;
           break;
         }
-        
+
         case 'Enter': {
           event.preventDefault();
           window.open(catalog[this.level - 1].specs[this.index - 1].link);
           break;
         }
-      
+
         default:
           break;
       }

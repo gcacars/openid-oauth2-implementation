@@ -42,7 +42,7 @@ export default {
     failed: false,
     params: {},
   }),
-  
+
   methods: {
     getCodes() {
       this.failed = false;
@@ -74,23 +74,23 @@ export default {
   mounted() {
     // Socket connection
     this.status = 'initialization';
-    
+
     // Listen to events
     socket.on('connect', this.getCodes);
     socket.on('codes', this.onCode);
-    socket.on('disconnect', this.disconnected);    
-    socket.on('authorized', this.authorized);    
+    socket.on('disconnect', this.disconnected);
+    socket.on('authorized', this.authorized);
     socket.on('authorization-error', this.error);
-    
+
     this.getCodes();
   },
-  
+
   unmounted() {
     // Remove listeners
     socket.off('connect', this.getCodes);
     socket.off('codes', this.onCode);
-    socket.off('disconnect', this.disconnected);    
-    socket.off('authorized', this.authorized);    
+    socket.off('disconnect', this.disconnected);
+    socket.off('authorized', this.authorized);
     socket.off('authorization-error', this.error);
   },
 };

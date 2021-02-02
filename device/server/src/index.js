@@ -1,18 +1,9 @@
-import Http from 'http';
-import Koa from 'koa';
-import KoaCors from '@koa/cors';
 import { Server } from 'socket.io';
 import { Issuer } from 'openid-client';
 import QRCode from 'qrcode';
 import CONFIG from '../../../globalConfig';
 
-const app = new Koa();
-app.use(KoaCors({
-  origin: true,
-}));
-
-const server = Http.createServer(app.callback());
-const io = new Server(server, {
+const io = new Server({
   cors: {
     origin: '*',
     methods: ['GET', 'POST'],
@@ -93,6 +84,6 @@ io.on('connection', /** @param {import('socket.io').Socket} socket */(socket) =>
   });
 });
 
-server.listen(CONFIG.device.server.port);
+io.listen(CONFIG.device.server.port);
 // eslint-disable-next-line no-console
 console.log(CONFIG.device.server.dns);

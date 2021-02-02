@@ -4,5 +4,8 @@
     "nowrap",
     "oidc",
     "openid"
+  ],
+  "eslint.workingDirectories": [
+    { "mode": "auto" }
   ]
 }

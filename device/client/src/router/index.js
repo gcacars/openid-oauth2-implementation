@@ -19,7 +19,7 @@ const routes = [
       const token = window.localStorage.getItem('token');
       const expires = window.localStorage.getItem('expires_at');
 
-      if (!token || !expires || Date.now() > parseInt(expires) * 1000) {
+      if (!token || !expires || Date.now() > parseInt(expires, 10) * 1000) {
         next('/login');
       } else {
         next();

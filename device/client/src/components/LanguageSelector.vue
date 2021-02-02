@@ -1,7 +1,7 @@
 <template>
   <div class="d-flex">
     <a href="#" class="lng p-2" @click.prevent="setLang(loc.id)" v-for="loc in locales"
-       :class="{ active: lang === loc.id }">
+       :key="loc.id" :class="{ active: lang === loc.id }">
       {{ loc.label }}
     </a>
   </div>
@@ -12,22 +12,22 @@ export default {
   data() {
     return {
       lang: null,
-      locales: [{ id: 'en', label: 'EN'}, { id: 'pt_BR', label: 'PT' }],
+      locales: [{ id: 'en', label: 'EN' }, { id: 'pt_BR', label: 'PT' }],
     };
   },
-  
+
   methods: {
     setLang(val) {
       this.lang = val;
       window.localStorage.setItem('lang', val);
       window.location.reload();
-    }
+    },
   },
 
   created() {
     this.lang = window.localStorage.getItem('lang') || 'pt_BR';
   },
-}
+};
 </script>
 
 <style scoped>

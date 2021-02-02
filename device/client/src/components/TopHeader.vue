@@ -28,7 +28,7 @@ export default {
       user: null,
     };
   },
-  
+
   methods: {
     signOut() {
       socket.emit('flush-keys');
@@ -38,7 +38,7 @@ export default {
       this.$router.push('/login');
     },
   },
-  
+
   mounted() {
     this.user = JSON.parse(window.localStorage.getItem('user_info'));
   },
@@ -46,7 +46,7 @@ export default {
   unmounted() {
     socket.off('flushed', this.redirect);
   },
-}
+};
 </script>
 
 <style scoped>
