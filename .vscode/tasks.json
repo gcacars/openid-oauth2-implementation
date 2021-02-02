@@ -117,7 +117,7 @@
       "script": "serve",
       "path": "device/client/",
       "problemMatcher": [],
-      "label": "Tela do dispositivo OpenID",
+      "label": "Tela do Dispositivo",
       "detail": "vue-cli-service serve",
       "presentation": {
         "echo": true,
@@ -138,7 +138,7 @@
       "script": "start",
       "path": "device/server/",
       "problemMatcher": [],
-      "label": "Servidor do dispositivo",
+      "label": "Servidor do Dispositivo",
       "detail": "nodemon -r esm index.js",
       "presentation": {
         "echo": true,

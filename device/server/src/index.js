@@ -4,7 +4,7 @@ import KoaCors from '@koa/cors';
 import { Server } from 'socket.io';
 import { Issuer } from 'openid-client';
 import QRCode from 'qrcode';
-// import './listen-as';
+import CONFIG from '../../../globalConfig';
 
 const app = new Koa();
 app.use(KoaCors({
@@ -20,16 +20,38 @@ const io = new Server(server, {
   },
 });
 
+/**
+ * @type {import('openid-client').DeviceFlowHandle}
+ */
 let handle;
+/**
+ * @type {import('openid-client').Client}
+ */
+let oidcClient;
+/**
+ * @type {import('openid-client').TokenSet}
+ */
+let tokenSet;
 
-io.on('connection', (socket) => {
-  console.log('Cliente conectado!');
+io.on('connection', /** @param {import('socket.io').Socket} socket */(socket) => {
+  // eslint-disable-next-line no-console
+  console.info('Screen connected!');
 
-  socket.on('get-codes', async (ua) => {
+  socket.on('get-codes', async () => {
     try {
+      // Check if already authenticated
+      if (tokenSet && !tokenSet.expired()) {
+        socket.emit('authorized', {
+          id_token: tokenSet.id_token,
+          expires_at: tokenSet.expires_at,
+        });
+        return;
+      }
+
+      // Get new codes
       process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
-      const issuer = await Issuer.discover('https://api.provider.dev.br');
-      const oidcClient = new issuer.Client({
+      const issuer = await Issuer.discover(CONFIG.provider.server.dns);
+      oidcClient = new issuer.Client({
         client_id: 'device',
         client_secret: 'dispositivo',
       });
@@ -45,23 +67,32 @@ io.on('connection', (socket) => {
         qrCode,
       });
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(error);
+      socket.emit('authorization-error', error);
     }
   });
 
   socket.on('wait-authorization', async () => {
     try {
-      const tokenSet = await handle.poll();
-      return true;
+      tokenSet = await handle.poll();
+      const userInfo = await oidcClient.userinfo(tokenSet);
+      socket.emit('authorized', {
+        id_token: tokenSet.id_token,
+        expires_at: tokenSet.expires_at,
+        userInfo,
+      });
     } catch (error) {
-      return false;
+      socket.emit('authorization-error', error);
     }
+  });
+
+  socket.on('flush-keys', () => {
+    tokenSet = null;
+    socket.emit('flushed');
   });
 });
 
-server.listen(9000);
-console.log('Ouvindo em https://api.device.dev.br');
-
-setTimeout(() => {
-  io.emit('test', 'Oláaaaa');
-}, 8000);
+server.listen(CONFIG.device.server.port);
+// eslint-disable-next-line no-console
+console.log(CONFIG.device.server.dns);

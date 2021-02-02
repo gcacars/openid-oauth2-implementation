@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 // Original:
 // https://raw.githubusercontent.com/panva/node-oidc-provider/master/example/adapters/redis.js
 const Redis = require('ioredis');
@@ -35,87 +36,115 @@ class RedisAdapter {
   }
 
   async upsert(id, payload, expiresIn) {
-    const key = this.key(id);
-    const store = consumable.has(this.name)
-      ? { payload: JSON.stringify(payload) } : JSON.stringify(payload);
+    try {
+      const key = this.key(id);
+      const store = consumable.has(this.name)
+        ? { payload: JSON.stringify(payload) } : JSON.stringify(payload);
 
-    const multi = client.multi();
-    multi[consumable.has(this.name) ? 'hmset' : 'set'](key, store);
+      const multi = client.multi();
+      multi[consumable.has(this.name) ? 'hmset' : 'set'](key, store);
 
-    if (expiresIn) {
-      multi.expire(key, expiresIn);
-    }
-
-    if (payload.grantId) {
-      const grantKey = grantKeyFor(payload.grantId);
-      multi.rpush(grantKey, key);
-      // if you're seeing grant key lists growing out of acceptable proportions consider using LTRIM
-      // here to trim the list to an appropriate length
-      const ttl = await client.ttl(grantKey);
-      if (expiresIn > ttl) {
-        multi.expire(grantKey, expiresIn);
+      if (expiresIn) {
+        multi.expire(key, expiresIn);
       }
-    }
 
-    if (payload.userCode) {
-      const userCodeKey = userCodeKeyFor(payload.userCode);
-      multi.set(userCodeKey, id);
-      multi.expire(userCodeKey, expiresIn);
-    }
+      if (payload.grantId) {
+        const grantKey = grantKeyFor(payload.grantId);
+        multi.rpush(grantKey, key);
+        // if you're seeing grant key lists growing out of acceptable proportions consider using LTRIM
+        // here to trim the list to an appropriate length
+        const ttl = await client.ttl(grantKey);
+        if (expiresIn > ttl) {
+          multi.expire(grantKey, expiresIn);
+        }
+      }
 
-    if (payload.uid) {
-      const uidKey = uidKeyFor(payload.uid);
-      multi.set(uidKey, id);
-      multi.expire(uidKey, expiresIn);
-    }
+      if (payload.userCode) {
+        const userCodeKey = userCodeKeyFor(payload.userCode);
+        multi.set(userCodeKey, id);
+        multi.expire(userCodeKey, expiresIn);
+      }
 
-    await multi.exec();
+      if (payload.uid) {
+        const uidKey = uidKeyFor(payload.uid);
+        multi.set(uidKey, id);
+        multi.expire(uidKey, expiresIn);
+      }
+
+      await multi.exec();
+    } catch (error) {
+      console.error(error, 'RedisAdapter');
+    }
   }
 
   async find(id) {
-    const data = consumable.has(this.name)
-      ? await client.hgetall(this.key(id))
-      : await client.get(this.key(id));
+    try {
+      const data = consumable.has(this.name)
+        ? await client.hgetall(this.key(id))
+        : await client.get(this.key(id));
 
-    if (!data) {
-      return undefined;
-    }
+      if (!data) {
+        return undefined;
+      }
 
-    if (typeof data === 'string') {
-      return JSON.parse(data);
+      if (typeof data === 'string') {
+        return JSON.parse(data);
+      }
+      const { payload, ...rest } = data;
+      return {
+        ...rest,
+        ...JSON.parse(payload),
+      };
+    } catch (error) {
+      console.error(error, 'RedisAdapter');
     }
-    const { payload, ...rest } = data;
-    return {
-      ...rest,
-      ...JSON.parse(payload),
-    };
   }
 
   async findByUid(uid) {
-    const id = await client.get(uidKeyFor(uid));
-    return this.find(id);
+    try {
+      const id = await client.get(uidKeyFor(uid));
+      return this.find(id);
+    } catch (error) {
+      console.error(error, 'RedisAdapter');
+    }
   }
 
   async findByUserCode(userCode) {
-    const id = await client.get(userCodeKeyFor(userCode));
-    return this.find(id);
+    try {
+      const id = await client.get(userCodeKeyFor(userCode));
+      return this.find(id);
+    } catch (error) {
+      console.error(error, 'RedisAdapter');
+    }
   }
 
   async destroy(id) {
-    const key = this.key(id);
-    await client.del(key);
+    try {
+      const key = this.key(id);
+      await client.del(key);
+    } catch (error) {
+      console.error(error, 'RedisAdapter');
+    }
   }
 
   async revokeByGrantId(grantId) { // eslint-disable-line class-methods-use-this
-    const multi = client.multi();
-    const tokens = await client.lrange(grantKeyFor(grantId), 0, -1);
-    tokens.forEach((token) => multi.del(token));
-    multi.del(grantKeyFor(grantId));
-    await multi.exec();
+    try {
+      const multi = client.multi();
+      const tokens = await client.lrange(grantKeyFor(grantId), 0, -1);
+      tokens.forEach((token) => multi.del(token));
+      multi.del(grantKeyFor(grantId));
+      await multi.exec();
+    } catch (error) {
+      console.error(error, 'RedisAdapter');
+    }
   }
 
   async consume(id) {
-    await client.hset(this.key(id), 'consumed', Math.floor(Date.now() / 1000));
+    try {
+      await client.hset(this.key(id), 'consumed', Math.floor(Date.now() / 1000));
+    } catch (error) {
+      console.error(error, 'RedisAdapter');
+    }
   }
 
   key(id) {

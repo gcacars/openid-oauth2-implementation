@@ -35,7 +35,7 @@ const account = new Account(lowdb);
 const configuration = {
   // Armazenamento persistente
   // (usando uma instância grátis de dev na cloud: https://redislabs.com/try-free/)
-  adapter: RedisAdapter,
+  // adapter: RedisAdapter,
   // adapter: ConsoleAdapter,
 
   // Contas
@@ -71,6 +71,20 @@ const configuration = {
         };
       },
       mask: '****-****',
+      /**
+       * 
+       * @param {Koa.Context} ctx 
+       * @param {string} form 
+       * @param {*} client 
+       * @param {*} deviceInfo 
+       * @param {*} userCode 
+       */
+      /*userCodeInputSource(ctx, form, client, deviceInfo, userCode) {
+        ctx.redirect('https://provider.dev.br/device');
+      },
+      userCodeConfirmSource() {
+        
+      },*/
     },
     jwtUserinfo: { enabled: true },
     pushedAuthorizationRequests: {
@@ -746,8 +760,6 @@ const configuration = {
 };
 
 // Segurança
-const helmet = KoaHelmet();
-
 function handleClientAuthErrors({ headers: { authorization }, oidc: { body, client } }, err) {
   if (err.statusCode === 401 && err.message === 'invalid_client') {
     console.log(err, 'client');
@@ -762,7 +774,22 @@ const oidc = new Provider('https://api.provider.dev.br', configuration);
 
 oidc.keys = secureKeys;
 oidc.proxy = true;
-// oidc.use(helmet);
+
+// Helmet
+oidc.use(KoaHelmet.contentSecurityPolicy());
+oidc.use(KoaHelmet.dnsPrefetchControl({
+  allow: true,
+}));
+oidc.use(KoaHelmet.expectCt());
+oidc.use(KoaHelmet.frameguard());
+oidc.use(KoaHelmet.hidePoweredBy());
+oidc.use(KoaHelmet.hsts());
+oidc.use(KoaHelmet.ieNoOpen());
+oidc.use(KoaHelmet.noSniff());
+oidc.use(KoaHelmet.permittedCrossDomainPolicies());
+oidc.use(KoaHelmet.referrerPolicy());
+oidc.use(KoaHelmet.xssFilter());
+
 oidc.on('introspection.error', handleClientAuthErrors);
 oidc.on('revocation.error', handleClientAuthErrors);
 oidc.on('authorization.error', handleClientAuthErrors);
@@ -786,6 +813,51 @@ oidc.on('authorization.accepted', (ctx) => {
     throw new errors.InvalidRequest('Should use PKCE authentication.', 99);
   }
 });
+
+oidc.on('interaction.started', (ctx, prompt) => {
+  const { client, params } = ctx.oidc;
+});
+
+oidc.on('interaction.saved', (interaction) => {
+
+});
+
+function handleContextEvent(ctx) {
+  const { client, params } = ctx.oidc;
+  const event = this.event;
+}
+
+oidc.on('authorization.success', handleContextEvent);
+oidc.on('end_session.success', handleContextEvent);
+oidc.on('grant.success', handleContextEvent);
+oidc.on('interaction.ended', handleContextEvent);
+
+function handleTokenOrCodeEvent(tokenCode) {
+  const event = this.event;
+}
+
+oidc.on('access_token.destroyed', handleTokenOrCodeEvent.bind({ event: 'access_token.destroyed' }));
+oidc.on('access_token.saved', handleTokenOrCodeEvent.bind({ event: 'access_token.saved' }));
+oidc.on('authorization_code.consumed', handleTokenOrCodeEvent.bind({ event: 'authorization_code.consumed' }));
+oidc.on('authorization_code.destroyed', handleTokenOrCodeEvent.bind({ event: 'authorization_code.destroyed' }));
+oidc.on('authorization_code.saved', handleTokenOrCodeEvent.bind({ event: 'authorization_code.saved' }));
+oidc.on('client_credentials.destroyed', handleTokenOrCodeEvent.bind({ event: 'client_credentials.destroyed' }));
+oidc.on('client_credentials.saved', handleTokenOrCodeEvent.bind({ event: 'client_credentials.saved' }));
+oidc.on('device_code.consumed', handleTokenOrCodeEvent.bind({ event: 'device_code.consumed' }));
+oidc.on('device_code.destroyed', handleTokenOrCodeEvent.bind({ event: 'device_code.destroyed' }));
+oidc.on('device_code.saved', handleTokenOrCodeEvent.bind({ event: 'device_code.saved' }));
+oidc.on('initial_access_token.destroyed', handleTokenOrCodeEvent.bind({ event: 'initial_access_token.destroyed' }));
+oidc.on('initial_access_token.saved', handleTokenOrCodeEvent.bind({ event: 'initial_access_token.saved' }));
+oidc.on('replay_detection.destroyed', handleTokenOrCodeEvent.bind({ event: 'replay_detection.destroyed' }));
+oidc.on('replay_detection.saved', handleTokenOrCodeEvent.bind({ event: 'replay_detection.saved' }));
+oidc.on('pushed_authorization_request.destroyed', handleTokenOrCodeEvent.bind({ event: 'pushed_authorization_request.destroyed' }));
+oidc.on('pushed_authorization_request.saved', handleTokenOrCodeEvent.bind({ event: 'pushed_authorization_request.saved' }));
+oidc.on('refresh_token.consumed', handleTokenOrCodeEvent.bind({ event: 'refresh_token.consumed' }));
+oidc.on('refresh_token.destroyed', handleTokenOrCodeEvent.bind({ event: 'refresh_token.destroyed' }));
+oidc.on('refresh_token.saved', handleTokenOrCodeEvent.bind({ event: 'refresh_token.saved' }));
+oidc.on('registration_access_token.destroyed', handleTokenOrCodeEvent.bind({ event: 'registration_access_token.destroyed' }));
+oidc.on('registration_access_token.saved', handleTokenOrCodeEvent.bind({ event: 'registration_access_token.saved' }));
+oidc.on('access_token.destroyed', handleTokenOrCodeEvent.bind({ event: 'access_token.destroyed' }));
 
 // Configurar o Koa
 const app = new Koa();

@@ -11,12 +11,9 @@ Para utilidade, o dispositivo simula uma aplicação de _streaming_ de conteúdo
 Para desenvolvimento foi utilizado:
 
 * Node 14.15.0
-* [Vue CLI 4.5.9](https://next.cli.vuejs.org/)
-  * [Vue.js 3](v3.vuejs.org/)
-  * [Vue Router 4](next.router.vuejs.org/)
-  * [Vue i18n](https://vue-i18n-next.intlify.dev)
-* [Bootstrap 5 (beta 1)](https://getbootstrap.com/docs/5.0/)
-  * Popper.js
+* [ESM](https://www.npmjs.com/package/esm) (necessário para simular os módulos ES6)
+* [OpenID Client](https://github.com/panva/node-openid-client)
+* [QR Code](https://www.npmjs.com/package/qrcode) (para implementar o `verification_uri_complete`)
 * [Socket.io](https://socket.io) _(foi utilizado como uma outro forma ao invés de requisições HTTP, para um desenvolvimento futuro)_
 
 > Note que alguns recursos estão em fase beta ou alpha e não são ainda indicados para ambientes produtivos.
@@ -32,11 +29,11 @@ O projeto implementa:
 * A exibição do código do usuário na tela e indicação do processo de autenticação.
 * A implementação do `verification_uri_complete` através da geração de um QR Code.
 
-## Back-end
+## Front-end (tela)
 
-Consulte o [leia-me](../server/README.md) do back-end da aplicação.
+Consulte o [leia-me](../client/README.md) do front-end da aplicação.
 
-## Comandos do Vue CLI
+## Scripts do Node.js
 
 * Iniciar a primeira vez
 
@@ -44,39 +41,19 @@ Consulte o [leia-me](../server/README.md) do back-end da aplicação.
   npm i
   ```
 
-* Compilar e atualizar automaticamente em desenvolvimento
+* Executar projeto
 
   ```console
-  npm run serve
+  npm start
   ```
 
-* Compilar e minificar para produção
+* Executar com depuração ativada
 
   ```console
-  npm run build
+  npm run debug
   ```
 
-* Rodar testes unitários
-
-  ```console
-  npm run test:unit
-  ```
-
-* Rodar testes ponta a ponta (E2E)
-
-  ```console
-  npm run test:e2e
-  ```
-
-* Validar código e arrumar arquivos
-
-  ```console
-  npm run lint
-  ```
-
-### Personalizar a configuração
-
-Veja a [Referência de Configuração](https://cli.vuejs.org/config/).
+> Node que utilizamos o [nodemon](https://www.npmjs.com/package/nodemon) aqui, pois é um projeto de estudo e não pronto para produção.
 
 ## Telas
 
