@@ -57,4 +57,8 @@ Consulte o [leia-me](../client/README.md) do front-end da aplicação.
 
 ## Telas
 
+_Indicações para interação - "Login do dispositivo"_
+![device login](../screens/device-login.png)
 
+_Tela do Deviceflix após o fluxo de autenticação estar completo_
+![deviceflix](../screens/deviceflix.png)

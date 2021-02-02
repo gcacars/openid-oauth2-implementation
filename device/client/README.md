@@ -80,4 +80,8 @@ Veja a [Referência de Configuração](https://cli.vuejs.org/config/).
 
 ## Telas
 
+_Indicações para interação - "Login do dispositivo"_
+![device login](../screens/device-login.png)
 
+_Tela do Deviceflix após o fluxo de autenticação estar completo_
+![deviceflix](../screens/deviceflix.png)
