@@ -8,7 +8,7 @@ const messages = {
     url_instructions: 'Please access the below URL in another browser:',
     code_instructions: 'and put this code in the field to continue:',
     qrcode_instructions: 'You can also point your smartphone camera at this QR Code:',
-    error: 'The time is expired or and error occurred while authenticating.',
+    error: 'The time is expired or an error occurred while authenticating.',
     try_again: 'Try again',
   },
   layout: {

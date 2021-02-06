@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Login from '../views/Login.vue';
-import Consent from '../views/Consent.vue';
 import SelectAccount from '../views/SelectAccount.vue';
+import LayoutSmall from '../views/LayoutSmall.vue';
 
 const routes = [
   {
@@ -11,9 +11,28 @@ const routes = [
     component: Login,
   },
   {
-    path: '/consent',
-    name: 'Consent',
-    component: Consent,
+    path: '/s',
+    name: 'LayoutSmall',
+    component: LayoutSmall,
+    children: [
+      {
+        path: '/consent',
+        name: 'Consent',
+        component: () => import(/* webpackChunkName: "adicionais" */ '../components/Consent.vue'),
+      },
+      {
+        path: '/device',
+        component: () => import(/* webpackChunkName: "adicionais" */ '../components/DeviceInputCode.vue'),
+      },
+      {
+        path: '/device/confirm',
+        component: () => import(/* webpackChunkName: "adicionais" */ '../components/DeviceConfirm.vue'),
+      },
+      {
+        path: '/device/conclusion',
+        component: () => import(/* webpackChunkName: "adicionais" */ '../components/DeviceConclusion.vue'),
+      },
+    ],
   },
   {
     path: '/select_account',

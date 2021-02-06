@@ -100,4 +100,7 @@ export default {
 .row {
   min-height: 100vh;
 }
+.visually-hidden {
+  visibility: hidden;
+}
 </style>
