@@ -2,7 +2,7 @@
   <div class="d-flex justify-content-center align-items-center text-center">
     <div class="col-sm-10 col-xl-6">
       <h1 class="display-1">Deviceflix</h1>
-      <div class="d-flex align-items-center justify-content-center mt-3" v-if="status">
+      <div class="d-flex align-items-center justify-content-center mt-3" v-if="status && !failed">
         <span class="spinner-border spinner-border-sm" role="status">
           <span class="visually-hidden">{{ $t('init["sr-loading"]') }}</span>
         </span>

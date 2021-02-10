@@ -20,13 +20,12 @@ class HttpContext {
    * Creates an instance of HttpContext.
    * @author Gabriel Anderson
    * @param {Request} request A requisição HTTP
-   * @param {import('koa').Request} req A requisição original
-   * @param {import('koa').Response} res Referência da resposta para a requisição
+   * @param {import('koa').Context} ctx O contexto da requisição original
    * @memberof HttpContext
    */
   constructor({
     method, ip, path, query, params, headers, body,
-  }, req, res) {
+  }, ctx) {
     this.request = {
       method,
       ip,
@@ -36,8 +35,9 @@ class HttpContext {
       headers,
       body,
     };
-    this.originalRequest = req;
-    this.originalResponse = res;
+    this.originalContext = ctx;
+    this.originalRequest = ctx.req;
+    this.originalResponse = ctx.res;
   }
 
   /**

@@ -1,0 +1,35 @@
+{
+  "name": "openid-implementation",
+  "version": "1.0.0",
+  "description": "OpenID and OAuth 2.1 visual implementation with node.js and Vue.js through Provider, Admin Panel, Device and App examples",
+  "main": "globalConfig.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nexsolab/poc-auth-server.git"
+  },
+  "keywords": [
+    "openid",
+    "oauth",
+    "auth",
+    "gui",
+    "front-end",
+    "provider",
+    "device",
+    "admin",
+    "identity"
+  ],
+  "author": "Gabriel Anderson <gcacars@gmail.com> (https://github.com/gcacars)",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/nexsolab/poc-auth-server/issues"
+  },
+  "homepage": "https://github.com/nexsolab/poc-auth-server#readme",
+  "devDependencies": {
+    "eslint": "^7.19.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.22.1"
+  }
+}

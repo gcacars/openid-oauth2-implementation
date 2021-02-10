@@ -1,5 +1,5 @@
 <template>
-  <div class="my-4">
+  <div>
     <img :src="account.picture" alt="profile" class="rounded-circle me-1">
     {{ account.email }}
     <small class="ms-2" v-if="logout">

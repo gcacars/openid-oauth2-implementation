@@ -1,5 +1,6 @@
 /* eslint-disable no-param-reassign */
 import { createStore, createLogger } from 'vuex';
+import interaction from './modules/interaction';
 
 const debug = process.env.NODE_ENV !== 'production';
 let maxId = 0;
@@ -72,6 +73,7 @@ const mutations = {
 // Criar depósito
 export default createStore({
   modules: {
+    interaction,
   },
   strict: false, // debug,
   plugins: debug ? [createLogger()] : [],

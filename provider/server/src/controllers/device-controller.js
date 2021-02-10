@@ -7,18 +7,18 @@ const providerRef = new WeakMap();
 const accountRef = new WeakMap();
 
 /**
- * Controller da interface com o usuário.
+ * Controller da interação com acesso de dispositivos.
  *
  * @author Gabriel Anderson
- * @class UIController
+ * @class DeviceController
  */
-class UIController {
+class DeviceController {
   /**
-   * Creates an instance of UIController.
+   * Creates an instance of DeviceController.
    * @author Gabriel Anderson
    * @param {import('oidc-provider').Provider} provider OpenID Provider
    * @param {object} db Instância do banco de dados
-   * @memberof UIController
+   * @memberof DeviceController
    */
   constructor(provider, accountInstance, db) {
     dbRef.set(this, db);
@@ -26,65 +26,37 @@ class UIController {
     accountRef.set(this, accountInstance);
   }
 
-  /**
-   * Verifica na primeira tela se o usuário tem uma conta e quais as formas de verificação
-   * desta conta, como uso de senhas, tokens, OTP, FIDO...
-   *
-   * @author Gabriel Anderson
-   * @param {import('../context/HttpContext').default} ctx Contexto da requisição
-   * @return {object} Um objeto contendo a informação necessária
-   * @memberof UIController
-   */
-  async lookup(ctx) {
+  async abort(ctx) {
+    /**
+     * @type {import('oidc-provider').Provider}
+     */
+    const provider = providerRef.get(this);
+
     try {
-      /**
-       * @type {import('oidc-provider').Provider}
-       */
-      const provider = providerRef.get(this);
+      const { userCode } = ctx.oidc.params;
 
-      /**
-       * @type {import('../app/Account.js').default}
-       */
-      const Account = accountRef.get(this);
+      if (!userCode) throw new NoCodeError();
 
-      // Obter dados da conta
-      const account = await Account.getAccountByLogin(ctx.request.body.login);
+      const normalized = userCode.toUpperCase().replace(/\W/g, '');
+      const code = await provider.DeviceCode.findByUserCode(
+        normalized,
+        { ignoreExpiration: true },
+      );
 
-      if (account) {
-        const session = await provider.setProviderSession(
-          ctx.originalRequest,
-          ctx.originalResponse,
-          {
-            // eslint-disable-next-line no-underscore-dangle
-            account: account._id,
-          },
-        );
+      Object.assign(code, {
+        error: 'access_denied',
+        errorDescription: 'End-User aborted interaction',
+      });
 
-        return {
-          session: {
-            uid: session.uid,
-            email: account.email,
-            username: account.email,
-            given_name: account.firstName,
-            picture: account.picture_url,
-          },
-          country: 'BR',
-          password: true,
-          otp: false,
-          fido: false,
-        };
-      }
-
-      return {
-        error: 'not_found',
-        error_description: 'Conta não encontrada.',
-      };
+      await code.save();
+      throw new AbortedError();
     } catch (error) {
-      return {
-        error: 'unknown_error',
-        error_description: error.message,
-      };
+      console.log(error);
     }
+  }
+  
+  async confirm() {
+    
   }
 
   /**
@@ -93,7 +65,7 @@ class UIController {
    * @author Gabriel Anderson
    * @param {import('../context/HttpContext').default} ctx Contexto da requisição
    * @return {object} Um objeto contendo a informação necessária
-   * @memberof UIController
+   * @memberof DeviceController
    */
   async details(ctx) {
     /**
@@ -102,6 +74,98 @@ class UIController {
     const provider = providerRef.get(this);
 
     try {
+      const { userCode } = ctx.request.params;
+
+      if (!userCode) {
+        return {
+          error: 'EmptyCode',
+          error_description: 'Código não informado.',
+        };
+      }
+
+      const normalized = userCode.toUpperCase().replace(/\W/g, '');
+      const code = await provider.DeviceCode.findByUserCode(
+        normalized,
+        { ignoreExpiration: true },
+      );
+
+      if (!code) {
+        return {
+          error: 'NotFoundCode',
+          error_description: 'Código não encontrado.',
+        };
+      }
+
+      if (code.isExpired) {
+        return {
+          error: 'ExpiredCode',
+          error_description: 'Código expirado.',
+        };
+      }
+
+      if (code.error || code.accountId || code.inFlight) {
+        return {
+          error: 'AlreadyUsedCode',
+          error_description: 'Código já utilizado.',
+        };
+      }
+
+      // Obter sessão atual
+      const oidcContext = provider.app.createContext(ctx.originalRequest, ctx.originalResponse);
+      const session = await provider.Session.get(oidcContext);
+      // const session = await provider.Session.get(ctx.originalContext);
+
+      if (!session.account) {
+        const action = provider.urlFor('authorization', {
+          query: {
+            client_id: code.clientId,
+            prompt: 'login',
+            redirect_uri: `https://provider.dev.br/device/confirmation?user_code=${code.userCode}`,
+            response_type: 'code',
+            scope: 'openid',
+          },
+        });
+        return action;
+      }
+
+      await provider.setProviderSession(ctx.originalRequest, ctx.originalResponse, {
+        account: session.accountId(),
+        remember: false,
+        clients: [code.clientId],
+        meta: {
+          [code.clientId]: {
+            deviceInfo: code.deviceInfo,
+            userCode: code.userCode,
+            exp: code.exp,
+          },
+        },
+      });
+
+      /*
+      if (!confirm) {
+        const client = await ctx.oidc.provider.Client.find(code.clientId);
+        if (!client) {
+          throw new InvalidClient('client is invalid', 'client not found');
+        }
+        ctx.oidc.entity('Client', client);
+
+        const action = ctx.oidc.urlFor('code_verification');
+        await userCodeConfirmSource(
+          ctx,
+          formHtml.confirm(action, ctx.oidc.session.state.secret, userCode),
+          client,
+          code.deviceInfo,
+          denormalize(normalized, mask),
+        );
+        return;
+      }
+
+      code.inFlight = true;
+      await code.save();
+
+      await next();
+      
+      
       const {
         uid, prompt, params, session,
       } = await provider.interactionDetails(ctx.originalRequest, ctx.originalResponse);
@@ -184,6 +248,7 @@ class UIController {
         default:
           return null;
       }
+      */
     } catch (error) {
       console.log(error);
     }
@@ -196,7 +261,7 @@ class UIController {
    *
    * @author Gabriel Anderson
    * @param {import('../context/HttpContext').default} ctx Contexto da requisição
-   * @memberof UIController
+   * @memberof DeviceController
    */
   async login(ctx) {
     let result;
@@ -263,7 +328,7 @@ class UIController {
    * @author Gabriel Anderson
    * @param {import('../context/HttpContext').default} ctx Contexto da requisição
    * @return {*}
-   * @memberof UIController
+   * @memberof DeviceController
    */
   async confirm(ctx) {
     // Pegar detalhes
@@ -311,7 +376,7 @@ class UIController {
    *
    * @author Gabriel Anderson
    * @param {import('../context/HttpContext').default} ctx Contexto da requisição
-   * @memberof UIController
+   * @memberof DeviceController
    */
   async abort(ctx) {
     const provider = providerRef.get(this);
@@ -325,4 +390,4 @@ class UIController {
   }
 }
 
-export default UIController;
+export default DeviceController;

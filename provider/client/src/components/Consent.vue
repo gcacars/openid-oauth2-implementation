@@ -24,7 +24,7 @@
             <span class="text-muted">quer acessar dados da sua conta</span>
           </div>
         </div>
-        <account-horizontal :account="sessao" :logout="true" class="text-center" />
+        <account-horizontal :account="sessao" :logout="true" class="my-3 text-center" />
         <input type="hidden" name="prompt" value="consent"/>
         <p>Ao continuar, você irá permitir que:</p>
 

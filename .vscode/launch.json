@@ -10,8 +10,10 @@
       "name": "OpenID Provider (Auth Server)",
       "cwd": "${workspaceFolder}\\provider\\server",
       "runtimeExecutable": "nodemon",
+      "runtimeArgs": [
+        "--preserve-symlinks"
+      ],
       "args": [
-        "--preserve-symlinks",
         "-r",
         "esm",
         "./index.js",

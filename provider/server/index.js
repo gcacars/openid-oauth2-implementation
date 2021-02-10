@@ -75,16 +75,40 @@ const configuration = {
        * 
        * @param {Koa.Context} ctx 
        * @param {string} form 
-       * @param {*} client 
-       * @param {*} deviceInfo 
-       * @param {*} userCode 
+       * @param {import('oidc-provider').ClientMetadata} client 
+       * @param {import('oidc-provider').ErrorOut} deviceInfo 
+       * @param {import('oidc-provider').errors.OIDCProviderError} userCode 
        */
-      /*userCodeInputSource(ctx, form, client, deviceInfo, userCode) {
-        ctx.redirect('https://provider.dev.br/device');
+      userCodeInputSource(ctx, form, client, deviceInfo, userCode) {
+        const url = new URL('https://provider.dev.br/device');
+        const qs = url.searchParams;
+        qs.set('x', form.match(/xsrf.*value="(.+)"/)[1]);
+        if (ctx.query.user_code) qs.set('user_code', ctx.query.user_code);
+        if (deviceInfo && 'error' in deviceInfo) qs.set('error', deviceInfo.error);
+        ctx.redirect(url.toString());
       },
-      userCodeConfirmSource() {
-        
-      },*/
+      userCodeConfirmSource(ctx, form, client, deviceInfo, userCode) {
+        ctx.body = {
+          ok: true,
+          data: {
+            xsrf: form.match(/xsrf.*value="(.+)"/)[1],
+            client: {
+              applicationType: client.applicationType,
+              clientName: client.clientName,
+              logoUri: client.logoUri,
+              clientUri: client.clientUri,
+              policyUri: client.policyUri,
+              tosUri: client.tosUri,
+              subjectType: client.subjectType,
+            },
+            deviceInfo,
+            userCode,
+          },
+        };
+      },
+      successSource(ctx) {
+        ctx.redirect('https://provider.dev.br/device/conclusion');
+      },
     },
     jwtUserinfo: { enabled: true },
     pushedAuthorizationRequests: {
@@ -775,20 +799,37 @@ const oidc = new Provider('https://api.provider.dev.br', configuration);
 oidc.keys = secureKeys;
 oidc.proxy = true;
 
+oidc.use(async (ctx, next) => {
+  /** pre-processing
+   * you may target a specific action here by matching `ctx.path`
+   */
+  console.log('pre middleware', ctx.method, ctx.path);
+
+  await next();
+
+  console.log('post middleware', ctx.method, ctx.oidc.route);
+
+  if (ctx.status === 302 && ctx.headers.accept === 'application/json') {
+    ctx.status = 202;
+    ctx.body = { redirect: { location: ctx.response.headers.location } };
+    ctx.response.headers.location = undefined;
+  }
+});
+
 // Helmet
-oidc.use(KoaHelmet.contentSecurityPolicy());
-oidc.use(KoaHelmet.dnsPrefetchControl({
-  allow: true,
-}));
-oidc.use(KoaHelmet.expectCt());
-oidc.use(KoaHelmet.frameguard());
-oidc.use(KoaHelmet.hidePoweredBy());
-oidc.use(KoaHelmet.hsts());
-oidc.use(KoaHelmet.ieNoOpen());
-oidc.use(KoaHelmet.noSniff());
-oidc.use(KoaHelmet.permittedCrossDomainPolicies());
-oidc.use(KoaHelmet.referrerPolicy());
-oidc.use(KoaHelmet.xssFilter());
+// oidc.use(KoaHelmet.contentSecurityPolicy());
+// oidc.use(KoaHelmet.dnsPrefetchControl({
+//   allow: true,
+// }));
+// oidc.use(KoaHelmet.expectCt());
+// oidc.use(KoaHelmet.frameguard());
+// oidc.use(KoaHelmet.hidePoweredBy());
+// // oidc.use(KoaHelmet.hsts());
+// oidc.use(KoaHelmet.ieNoOpen());
+// oidc.use(KoaHelmet.noSniff());
+// oidc.use(KoaHelmet.permittedCrossDomainPolicies());
+// oidc.use(KoaHelmet.referrerPolicy());
+// oidc.use(KoaHelmet.xssFilter());
 
 oidc.on('introspection.error', handleClientAuthErrors);
 oidc.on('revocation.error', handleClientAuthErrors);
@@ -871,6 +912,7 @@ app.use(KoaCors({
   },
   credentials: true,
   exposeHeaders: ['WWW-Authenticate'],
+  allowHeaders: ['X-BuildID'],
 }));
 
 if (process.env.NODE_ENV === 'production') {

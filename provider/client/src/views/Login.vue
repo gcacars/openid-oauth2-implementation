@@ -143,12 +143,11 @@ export default {
           // Quando sucesso, recebemos um redirecionamento
           window.location.href = json.data;
         } catch (error) {
+          this.acessando = false;
           this.$store.dispatch('addToast', {
             title: 'Erro desconhecido',
             message: 'Ocorreu um erro ao entrar. Tente novamente mais tarde.',
           });
-        } finally {
-          this.acessando = false;
         }
       }
     },

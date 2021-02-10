@@ -4,7 +4,8 @@
     "autofocus",
     "nowrap",
     "oidc",
-    "openid"
+    "openid",
+    "xsrf"
   ],
   "eslint.workingDirectories": [
     { "mode": "auto" }

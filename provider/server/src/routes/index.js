@@ -1,4 +1,5 @@
 import KoaBodyParser from 'koa-body';
+import DeviceRouter from './device-route';
 import UIRouter from './ui-route';
 
 // Variáveis privadas
@@ -26,6 +27,11 @@ class Routes {
     const interaction = this.configureUserInterface(db);
     app.use(interaction.routes());
     app.use(interaction.allowedMethods());
+
+    // Device
+    const device = DeviceRouter(provider, db);
+    app.use(device.routes());
+    app.use(device.allowedMethods());
   }
 
   configureUserInterface(db) {
@@ -33,6 +39,7 @@ class Routes {
     const router = new UIRouter(provider, { prefix: '/ui' }, db);
     router.get('/:uid', router.details());
     router.get('/cb/google');
+    router.post('/:uid/lookup', bodyParser, router.lookup());
     router.post('/:uid/login', bodyParser, router.login());
     router.post('/:uid/federated');
     router.post('/:uid/continue');

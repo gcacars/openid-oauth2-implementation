@@ -1,20 +1,34 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import Login from '../views/Login.vue';
-import SelectAccount from '../views/SelectAccount.vue';
+import store from '../store';
 import LayoutSmall from '../views/LayoutSmall.vue';
+// import Login from '../views/Login.vue';
+import AccountLookup from '../components/AccountLookup.vue';
+import SelectAccount from '../views/SelectAccount.vue';
 
 const routes = [
-  {
-    path: '/',
-    alias: '/login',
-    name: 'Login',
-    component: Login,
-  },
   {
     path: '/s',
     name: 'LayoutSmall',
     component: LayoutSmall,
     children: [
+      {
+        path: '/',
+        name: 'Login',
+        alias: '/login',
+        component: AccountLookup,
+      },
+      {
+        path: '/auth',
+        name: 'Password',
+        component: () => import(/* webpackChunkName: "adicionais" */ '../components/AuthPassword.vue'),
+        beforeEnter: (to, from, next) => {
+          if ('session' in store.state.interaction.authenticate) {
+            next();
+          } else {
+            next({ name: 'Login' });
+          }
+        },
+      },
       {
         path: '/consent',
         name: 'Consent',
@@ -22,14 +36,36 @@ const routes = [
       },
       {
         path: '/device',
+        name: 'Device',
         component: () => import(/* webpackChunkName: "adicionais" */ '../components/DeviceInputCode.vue'),
       },
       {
-        path: '/device/confirm',
+        path: '/device/:code',
+        name: 'ConfirmDevice',
         component: () => import(/* webpackChunkName: "adicionais" */ '../components/DeviceConfirm.vue'),
+        beforeEnter: (to, from, next) => {
+          const regex = new RegExp(process.env.VUE_APP_CODE_REGEX);
+          const { code } = to.params;
+
+          // Fluxo normal
+          if (from.name === 'Device' && regex.test(store.state.interaction.device[code].userCode)) {
+            return next();
+          }
+
+          // Fluxo via QR Code
+          if (regex.test(to.query.user_code)) {
+            // FIX
+            store.dispatch('interaction/setDeviceUserCode', to.query.user_code);
+            return next();
+          }
+
+          // Ops...
+          return next({ name: 'Device' });
+        },
       },
       {
         path: '/device/conclusion',
+        name: 'DeviceConclusion',
         component: () => import(/* webpackChunkName: "adicionais" */ '../components/DeviceConclusion.vue'),
       },
     ],
