@@ -14,16 +14,7 @@
         <span v-else>Tente novamente mais tarde.</span>
       </div>
       <div v-else>
-        <div class="d-flex flex-column flex-md-row align-items-center align-items-md-start
-              justify-content-between">
-          <div class="rounded shadow p-2 bg-light mb-3 mb-md-0" id="logo">
-            <img :src="cliente.logoUri" alt="app" class="w-100" id="logo-img">
-          </div>
-          <div class="text-center text-md-end ps-2">
-            <h4>{{ cliente.clientName }}</h4>
-            <span class="text-muted">quer acessar dados da sua conta</span>
-          </div>
-        </div>
+        <client-header :cliente="cliente" />
         <account-horizontal :account="sessao" :logout="true" class="my-3 text-center" />
         <input type="hidden" name="prompt" value="consent"/>
         <p>Ao continuar, você irá permitir que:</p>
@@ -75,45 +66,24 @@
 </template>
 
 <style scoped>
-#logo {
-  margin-top: -3.5rem;
-  height: 7rem;
-  width: 8rem;
-  overflow: hidden;
-}
-#logo-img {
-  width: 6rem;
-  height: 6rem;
-  object-fit: contain;
-}
 .accordion-button {
   /* Forçar para esquerda - no mobile o texto fica centralizado */
   text-align: start;
-}
-
-@media (min-width: 768px) {
-  #logo {
-    margin-top: -3.5rem;
-    height: 9rem;
-    width: 10rem;
-  }
-  #logo-img {
-    width: 8rem;
-    height: 8rem;
-  }
 }
 </style>
 
 <script>
 import { BIconExclamationCircle } from 'bootstrap-icons-vue';
 import AccountHorizontal from './AccountHorizontal.vue';
-import fetchConfig from '../config/fetch';
+import ClientHeader from './ClientHeader.vue';
+import Resource from '../app/Resource';
 
 export default {
   name: 'Consent',
   components: {
     BIconExclamationCircle,
     AccountHorizontal,
+    ClientHeader,
   },
 
   data() {
@@ -136,13 +106,12 @@ export default {
       this.enviando = true;
 
       try {
-        const res = await fetch(
-          `${process.env.VUE_APP_PROVIDER_URL}/ui/${this.$route.query.uid}/confirm`,
-          { ...fetchConfig, method: 'POST', body: new URLSearchParams(new FormData(event.target)) },
-        );
-        const json = await res.json();
+        const json = await Resource.fetchAuthServer(`/ui/${this.$route.query.uid}/confirm`, {
+          method: 'POST',
+          body: new URLSearchParams(new FormData(event.target)),
+        });
 
-        if ('error' in json || !json.ok || !json.data.startsWith('https://')) {
+        if ('error' in json || !json.ok) {
           if (json.error_code === 'SessionNotFound') {
             this.$router.push({ name: 'Login', query: { reason: 'SessionNotFound' } });
           } else {
@@ -155,7 +124,9 @@ export default {
         }
 
         // Quando sucesso, recebemos um redirecionamento
-        window.location.href = json.data;
+        if (!Resource.handleRedirect(json, this.$router)) {
+          window.location.href = json.redirect.location;
+        }
       } catch (error) {
         this.$store.dispatch('addToast', {
           title: 'Erro desconhecido',
@@ -183,10 +154,18 @@ export default {
         this.carregando = true;
         this.falhou = false;
 
-        const res = await fetch(`${process.env.VUE_APP_PROVIDER_URL}/ui/${this.$route.query.uid}`, fetchConfig);
+        const json = await Resource.fetchAuthServer(`/ui/${this.$route.query.uid}`);
 
-        const json = await res.json();
-        if (!json.ok || !json.data) this.falhou = true;
+        if ('error' in json || !json.ok) {
+          this.falhou = true;
+          this.carregando = false;
+          this.$store.dispatch('addToast', {
+            title: this.$t('errors.errorTitle'),
+            subtitle: json.error,
+            message: `${this.$t('errors.errorTitle')} ${json.error_description}`,
+          });
+          return;
+        }
 
         this.cliente = json.data.client;
         this.sessao = json.data.session;

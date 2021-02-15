@@ -1,5 +1,6 @@
 const fetchConfig = {
   headers: {
+    accept: 'application/json',
     'X-BuildID': process.env.VUE_APP_BUILD_HASH,
   },
   credentials: 'include',

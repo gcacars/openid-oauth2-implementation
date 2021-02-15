@@ -20,7 +20,7 @@
 
 <script>
 import { BIconExclamationCircle } from 'bootstrap-icons-vue';
-import fetchConfig from '../config/fetch';
+import Resource from '../app/Resource';
 
 export default {
   components: {
@@ -50,17 +50,13 @@ export default {
       this.enviando = true;
 
       try {
-        const res = await fetch(
-          `${process.env.VUE_APP_PROVIDER_URL}/device`, {
-            ...fetchConfig,
-            method: 'POST',
-            body: new URLSearchParams({
-              user_code: this.userCode,
-              xsrf: this.$route.query.x,
-            }),
-          },
-        );
-        const json = await res.json();
+        const json = await Resource.fetchAuthServer('/device', {
+          method: 'POST',
+          body: new URLSearchParams({
+            user_code: this.userCode,
+            xsrf: this.$route.query.x,
+          }),
+        }, this.$router);
 
         if ('error' in json || !json.ok) {
           switch (json.error) {
@@ -111,11 +107,13 @@ export default {
         this.$store.dispatch('interaction/setDeviceResponse', json.data);
 
         // Redirecionar
-        this.$router.push({ name: 'ConfirmDevice', params: { code: json.data.userCode } });
+        if (!Resource.handleRedirect(json, this.$router)) {
+          this.$router.push({ name: 'ConfirmDevice', params: { code: json.data.userCode } });
+        }
       } catch (error) {
         this.$store.dispatch('addToast', {
-          title: 'Erro desconhecido',
-          message: 'Ocorreu um erro. Tente novamente mais tarde.',
+          title: this.$t('errors.unknownError'),
+          message: this.$t('errors.errorOcurredTryAgain'),
         });
         this.falhou = true;
       } finally {

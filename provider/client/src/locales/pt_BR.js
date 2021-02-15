@@ -1,7 +1,11 @@
 const loc = {
   continueBtnLabel: 'Continuar',
   abortBtnLabel: 'Cancelar',
-  unknownError: 'Erro desconhecido',
+  errors: {
+    unknownError: 'Erro desconhecido',
+    errorTitle: 'Erro',
+    errorOcurredTryAgain: 'Ocorreu um erro, por favor tente novamente.',
+  },
   client: {
     wannaAccess: 'quer ter acesso à sua conta',
   },

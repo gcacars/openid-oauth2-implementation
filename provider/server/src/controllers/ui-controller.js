@@ -254,6 +254,7 @@ class UIController {
       ctx.originalRequest, ctx.originalResponse, result, { mergeWithLastSubmission: false },
     );
 
+    ctx.originalContext.redirect(redirectTo);
     return redirectTo;
   }
 
@@ -303,6 +304,7 @@ class UIController {
       ctx.originalRequest, ctx.originalResponse, result, { mergeWithLastSubmission: true },
     );
 
+    ctx.originalContext.redirect(redirectTo);
     return redirectTo;
   }
 

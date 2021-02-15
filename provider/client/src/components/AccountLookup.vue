@@ -1,5 +1,5 @@
 <template>
-  <div class="card-body px-md-4 py-md-3 py-lg-4 py-lg-5">
+  <div class="card-body px-md-4 py-md-3 py-lg-4">
     <div class="text-muted text-center mb-4">
       <h4>{{ $t('accountLookup.welcome') }}</h4>
       <span v-html="mensagem"></span>
@@ -28,7 +28,7 @@
 </template>
 
 <script>
-import fetchConfig from '../config/fetch';
+import Resource from '../app/Resource';
 
 export default {
   data() {
@@ -57,28 +57,24 @@ export default {
 
   methods: {
     async enviar() {
-      this.falhou = false;
       this.enviando = true;
 
       try {
         // Envia o formulário
-        const res = await fetch(
-          `${process.env.VUE_APP_PROVIDER_URL}/ui/${this.$route.query.uid}/lookup`, {
-            ...fetchConfig,
-            method: 'POST',
-            body: new URLSearchParams({
-              prompt: 'login',
-              login: this.login,
-            }),
-          },
-        );
-        const json = await res.json();
+        const json = await Resource.fetchAuthServer(`/ui/${this.$route.query.uid}/lookup`, {
+          method: 'POST',
+          body: new URLSearchParams({
+            prompt: 'login',
+            login: this.login,
+          }),
+        });
 
-        if (!res.ok || 'error' in json || !json.ok) {
+        if ('error' in json || !json.ok) {
           this.enviando = false;
           this.$store.dispatch('addToast', {
-            title: 'Erro',
-            message: 'Ocorreu um erro ao entrar. Tente novamente.',
+            title: this.$t('errors.errorTitle'),
+            subtitle: json.error,
+            message: `${this.$t('errors.errorTitle')} ${json.error_description}`,
           });
           return;
         }
@@ -86,14 +82,16 @@ export default {
         // Salvar estado
         this.$store.dispatch('interaction/setInteractionResponse', json.data);
 
-        // Decidir qual o próximo fluxo
-        if (json.data.password) {
-          this.$router.push({ name: 'Password' });
+        if (!Resource.handleRedirect(json, this.$router)) {
+          // Decidir qual o próximo fluxo
+          if (json.data.password) {
+            this.$router.push({ name: 'Password' });
+          }
         }
       } catch (error) {
         this.$store.dispatch('addToast', {
-          title: 'Erro desconhecido',
-          message: 'Ocorreu um erro ao entrar. Tente novamente mais tarde.',
+          title: this.$t('errors.unknownError'),
+          message: this.$t('errors.errorOcurredTryAgain'),
         });
       } finally {
         this.enviando = false;

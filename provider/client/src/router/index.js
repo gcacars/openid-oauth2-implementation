@@ -33,6 +33,9 @@ const routes = [
         path: '/consent',
         name: 'Consent',
         component: () => import(/* webpackChunkName: "adicionais" */ '../components/Consent.vue'),
+        meta: {
+          cardAdditionalClasses: ['col-xl-5'],
+        },
       },
       {
         path: '/device',

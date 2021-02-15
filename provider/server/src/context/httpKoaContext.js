@@ -44,6 +44,15 @@ function makeHttpContext(controller) {
             next: `${ctx.protocol}://${ctx.host}${ctx.path}?${currentSearch.toString()}`,
           },
         };
+      } else if (ctx.status === 302 && ctx.headers.accept === 'application/json') {
+        ctx.status = 202;
+        ctx.body = {
+          ok: true,
+          redirect: {
+            location: ctx.response.headers.location,
+          },
+        };
+        ctx.response.headers.location = undefined;
       } else {
         ctx.body = {
           ok: true,

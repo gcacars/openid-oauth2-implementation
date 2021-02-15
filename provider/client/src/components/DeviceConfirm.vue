@@ -24,14 +24,13 @@
 
 <script>
 import ClientHeader from './ClientHeader.vue';
-import fetchConfig from '../config/fetch';
+import Resource from '../app/Resource';
 
 export default {
   components: { ClientHeader },
 
   data() {
     return {
-      falhou: false,
       enviando: false,
       cancelando: false,
       userCode: null,
@@ -43,8 +42,6 @@ export default {
 
   methods: {
     async enviar() {
-      this.falhou = false;
-
       const regex = new RegExp(process.env.VUE_APP_CODE_REGEX);
       if (!regex.test(this.userCode.toUpperCase())) {
         this.$store.dispatch('addToast', {
@@ -57,34 +54,15 @@ export default {
       this.enviando = true;
 
       try {
-        const res = await fetch(
-          `${process.env.VUE_APP_PROVIDER_URL}/device`, {
-            ...fetchConfig,
-            method: 'POST',
-            headers: {
-              accept: 'application/json',
-            },
-            body: new URLSearchParams({
-              user_code: this.userCode,
-              xsrf: this.xsrf,
-              confirm: 'yes',
-            }),
-          },
-        );
-
-        // Obter dados
-        const json = await res.json();
-
-        // Necessário login?
-        if ('redirect' in json) {
-          const href = json.redirect.location;
-          if (href.includes(process.env.VUE_APP_URL)) {
-            this.$router.push(href.replace(process.env.VUE_APP_URL, ''));
-          } else {
-            window.location.href = href;
-          }
-          return;
-        }
+        // Chamar servidor
+        const json = await Resource.fetchAuthServer('/device', {
+          method: 'POST',
+          body: new URLSearchParams({
+            user_code: this.userCode,
+            xsrf: this.xsrf,
+            confirm: 'yes',
+          }),
+        });
 
         if ('error' in json || !json.ok) {
           switch (json.error) {
@@ -126,13 +104,14 @@ export default {
         this.$store.dispatch('interaction/confirmDevice', this.userCode);
 
         // Redirecionar
-        this.$router.push({ name: 'DeviceConclusion' });
+        if (!Resource.handleRedirect(json, this.$router) && json.ok) {
+          this.$router.push({ name: 'DeviceConclusion' });
+        }
       } catch (error) {
         this.$store.dispatch('addToast', {
-          title: 'Erro desconhecido',
-          message: 'Ocorreu um erro. Tente novamente mais tarde.',
+          title: this.$t('errors.unknownError'),
+          message: this.$t('errors.errorOcurredTryAgain'),
         });
-        this.falhou = true;
       } finally {
         this.enviando = false;
       }

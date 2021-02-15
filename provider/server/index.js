@@ -7,7 +7,7 @@ import KoaMount from 'koa-mount';
 import { Provider, errors } from 'oidc-provider';
 import { nanoid } from 'nanoid';
 import base64url from 'base64url';
-import { RedisAdapter } from './src/adapters/redis';
+// import { RedisAdapter } from './src/adapters/redis';
 // import ConsoleAdapter from './src/adapters/console';
 import Account from './src/app/Account';
 import lowdb from './src/data/lowdb';
@@ -19,6 +19,9 @@ const secureKeys = [
   '5xhuqknssevprev03qivap4d4se4dx5xardk95y6enz7uru7eo',
   '4pndhwz8dk57la2fqz0rdakseofsnzqbuz8a0vcwirjkpypcb7',
 ];
+
+// CORS
+const allowedHosts = ['https://provider.dev.br', 'https://apprp.dev.br', 'https://admin-op.dev.br'];
 
 // As execuções para calcular um hash pairwise devem ser rápidas.
 // Aqui mantemos um cache do que já foi feito.
@@ -224,8 +227,7 @@ const configuration = {
 
   // Validar o CORS de uma requisição de um cliente
   clientBasedCORS(ctx, origin, client) {
-    console.log(origin);
-    return true;
+    return allowedHosts.includes(origin);
   },
 
   // Segundos de tolerância para tokens, objetos de requisição e DPoP
@@ -450,7 +452,7 @@ const configuration = {
       return client.clientId === 'app' ? 20 * 60 : 1 * 60 * 60; // 1 hr
     },
     AuthorizationCode: 10, // 10 s
-    ClientCredentials: 600,
+    ClientCredentials: 10 * 60, // 10 min
     DeviceCode: 10 * 60, // 10 min
     IdToken: 1 * 60 * 60, // 1 hr
     RefreshToken(ctx, token, client) {
@@ -789,7 +791,7 @@ function handleClientAuthErrors({ headers: { authorization }, oidc: { body, clie
     console.log(err, 'client');
     // save error details out-of-bands for the client developers, `authorization`, `body`, `client`
     // are just some details available, you can dig in ctx object for more.
-  } else {
+  } else if (err.error !== 'authorization_pending') {
     console.error(err);
   }
 }
@@ -803,15 +805,20 @@ oidc.use(async (ctx, next) => {
   /** pre-processing
    * you may target a specific action here by matching `ctx.path`
    */
-  console.log('pre middleware', ctx.method, ctx.path);
+  if (ctx.path !== '/token') console.log('pre middleware', ctx.method, ctx.path);
 
   await next();
 
-  console.log('post middleware', ctx.method, ctx.oidc.route);
+  console.log('post middleware', ctx.method, ctx.oidc && ctx.oidc.route);
 
   if (ctx.status === 302 && ctx.headers.accept === 'application/json') {
     ctx.status = 202;
-    ctx.body = { redirect: { location: ctx.response.headers.location } };
+    ctx.body = {
+      ok: true,
+      redirect: {
+        location: ctx.response.headers.location,
+      },
+    };
     ctx.response.headers.location = undefined;
   }
 });
@@ -904,7 +911,6 @@ oidc.on('access_token.destroyed', handleTokenOrCodeEvent.bind({ event: 'access_t
 const app = new Koa();
 app.proxy = true;
 // app.use(helmet);
-const allowedHosts = ['https://provider.dev.br', 'https://apprp.dev.br/', 'https://admin-op.dev.br/'];
 app.use(KoaCors({
   // eslint-disable-next-line arrow-body-style
   origin: (ctx) => {
@@ -912,7 +918,7 @@ app.use(KoaCors({
   },
   credentials: true,
   exposeHeaders: ['WWW-Authenticate'],
-  allowHeaders: ['X-BuildID'],
+  allowHeaders: ['Authorization', 'X-BuildID'],
 }));
 
 if (process.env.NODE_ENV === 'production') {

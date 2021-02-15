@@ -42,7 +42,7 @@
 <script>
 import { BIconBackspaceFill } from 'bootstrap-icons-vue';
 import AccountHorizontal from './AccountHorizontal.vue';
-import fetchConfig from '../config/fetch';
+import Resource from '../app/Resource';
 
 export default {
   components: {
@@ -62,54 +62,57 @@ export default {
       return this.$store.state.interaction.authenticate.session;
     },
     login() {
-      return this.$store.state.interaction.authenticate.username;
+      return this.$store.state.interaction.authenticate.session.username;
     },
   },
 
   methods: {
     back() {
-      this.$router({
+      this.$router.push({
         name: 'Login',
         query: {
-          login_hint: this.$store.state.interaction.authenticate.username,
+          login_hint: this.login,
         },
       });
     },
 
     async enviar() {
-      this.falhou = false;
+      console.log(this.$store.state);
       this.enviando = true;
 
       try {
+        const { uid } = this.sessao;
+
         // Envia o formulário
-        const res = await fetch(
-          `${process.env.VUE_APP_PROVIDER_URL}/ui/${this.$route.query.uid}/login`, {
-            ...fetchConfig,
+        const json = await Resource.fetchAuthServer(
+          `/ui/${uid}/login`, {
             method: 'POST',
             body: new URLSearchParams({
               prompt: 'login',
-              login: this.$store.state.interaction.authenticate.username,
+              login: this.login,
               password: this.senha,
             }),
           },
         );
-        const json = await res.json();
 
-        if (!res.ok || 'error' in json || !json.ok) {
+        if ('error' in json || !json.ok) {
           this.enviando = false;
           this.$store.dispatch('addToast', {
-            title: 'Erro',
-            message: 'Ocorreu um erro ao entrar. Tente novamente.',
+            title: this.$t('errors.errorTitle'),
+            subtitle: json.error,
+            message: `${this.$t('errors.errorTitle')} ${json.error_description}`,
           });
           return;
         }
 
         // Quando sucesso, recebemos um redirecionamento
-        window.location.href = json.data;
+        if (!Resource.handleRedirect(json, this.$router)) {
+          window.location.href = json.redirect.location;
+        }
       } catch (error) {
         this.$store.dispatch('addToast', {
-          title: 'Erro desconhecido',
-          message: 'Ocorreu um erro ao entrar. Tente novamente mais tarde.',
+          title: this.$t('errors.unknownError'),
+          message: this.$t('errors.errorOcurredTryAgain'),
         });
       } finally {
         this.enviando = false;
