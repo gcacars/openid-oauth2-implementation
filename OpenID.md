@@ -505,9 +505,31 @@ Para representar uma claim em vários idiomas, usa-se o formato `[claim]#[idioma
 |`profile#en-US`|`https://example.com.us/gabriel`|
 |`profile#es`|`https://ejemplo.com.ar/gabriel`|
 
+#### A claim ACR
+
+O _Authentication Context Class Reference_ especifica um conjunto de regras de negócio que uma requisição de autenticação deve satisfazer.
+
+Um cliente solicita no início do processo quais ACRs devem ser satisfeitos através do parâmetro `acr_values`. Ao final do processo o token ID gerado irá conter uma lista das regras que foram satisfeitas na claim `acr` (e não **como** foram).
+
+Quando esse valor é `0`, significa que tem um nível baixo de segurança e não atende os requisitos da [ISO 29115](https://www.iso.org/standard/45138.html), ou seja, um cliente não deve permitir nenhuma movimentação monetária, por exemplo. Esse valor pode/deve estar presente no token quando por exemplo a autenticação foi feita através de um token de longo prazo de expiração (como quando há um )
+
+#### A claim AMR
+
+O _Authentication Methods References_ informa quais métodos de autenticação foram usados para garantir um certo nível de garantia ([RFC6711](https://tools.ietf.org/html/rfc6711)) de que o usuário informado no token é realmente o usuário da sessão, como quando após digitar a senha, o usuário ainda precisa usar sua digital no celular para confirmar o acesso. Ou quando um token OTP é necessário.
+
+A claim `amr` presente no token irá informar uma lista de métodos utilizados na autenticação. _(veja a lista abaixo)_
+
+#### Relação de ACR e AMR
+
+Note que geralmente os métodos de autenticação utilizados em um fluxo de autenticação, são aqueles necessários para satisfazer o parâmetro `acr_values` informado na requisição. Dessa forma há uma ligação entre o `acr` e o `amr` recebido no token.
+
+Note que o `amr` informa os métodos técnicos utilizados para satisfazer o processo e por isso é recomendado que não seja utilizado pelos clientes (ou _relying parties_) para permitir acesso à recursos, visto que os métodos podem variar com o tempo com a necessidade de métodos com maior segurança.
+
+Ao contrário, sendo que possível, a aplicação (cliente) deve verificar se os valores de `acr` tem o resultado esperado para liberar acesso aos recursos, como fazer pagamentos por exemplo.
+
 #### Referência de Métodos de Autenticação
 
-A claim `amr` segundo a [RFC8176](https://tools.ietf.org/html/rfc8176) pode ter uma lista dos seguintes valores:
+A claim `amr` segundo a [RFC8176](https://tools.ietf.org/html/rfc8176) pode ter uma lista com os seguintes valores:
 
 |Valor|Descrição
 |---|---|
@@ -927,3 +949,4 @@ Outras fontes de leitura (bibliografia):
 - [OpenID Blog - Financial-grade API (FAPI) Explained by an Implementer](https://fapi.openid.net/2020/02/26/guest-blog-financial-grade-api-fapi-explained-by-an-implementer/)
 - [Understanding ID Token](https://darutk.medium.com/understanding-id-token-5f83f50fa02e)
 - [Getting Started with oidc-provider](https://www.scottbrady91.com/OpenID-Connect/Getting-Started-with-oidc-provider)
+- [ACR and AMR Values](https://digital.nhs.uk/services/nhs-identity/guidance-for-developers/detailed-guidance/acr-values)

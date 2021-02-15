@@ -4,7 +4,7 @@ import Koa from 'koa';
 import KoaCors from '@koa/cors';
 import KoaHelmet from 'koa-helmet';
 import KoaMount from 'koa-mount';
-import { Provider, errors } from 'oidc-provider';
+import { Provider, errors, interactionPolicy } from 'oidc-provider';
 import { nanoid } from 'nanoid';
 import base64url from 'base64url';
 // import { RedisAdapter } from './src/adapters/redis';
@@ -219,7 +219,7 @@ const configuration = {
 
   // Configurações
   acceptQueryParamAccessTokens: false, // Não aceitar tokens enviados nos parâmetros da URL
-  acrValues: [],
+  acrValues: ['0'],
   audiences(ctx, sub, token, use) {
     // Configurar a audiência/público do token
     return undefined;
@@ -341,30 +341,113 @@ const configuration = {
 
   // Configuração do cliente HTTP usado pelo provedor
   httpOptions(options) {
-    options.retry = 0;
-    options.followRedirect = false;
-    options.timeout = 5000;
+    const opts = {
+      ...options,
+      encoding: 'utf8',
+      timeout: {
+        lookup: 0.5 * 1000,
+        connect: 0.5 * 1000,
+        secureConnect: 0.5 * 1000,
+        socket: 1 * 1000,
+        response: 10 * 60 * 1000,
+        send: 1 * 60 * 1000,
+      },
+      retry: 0,
+      followRedirect: false,
+      cache: false,
+      throwHttpErrors: true,
+    };
     // eslint-disable-next-line no-template-curly-in-string
-    options.headers['User-Agent'] = 'oidc-provider/${VERSION} (${ISSUER_IDENTIFIER})';
-    return options;
+    opts.headers['User-Agent'] = 'oidc-provider/${VERSION} (${ISSUER_IDENTIFIER})';
+    return opts;
   },
 
   // Interface UI
   interactions: {
     url(ctx, itx) {
+      const url = new URL('https://provider.dev.br');
+
       switch (itx.prompt.name) {
         case 'login': {
-          const loginHint = itx.params.login_hint ? `&login_hint=${itx.params.login_hint}` : '';
-          return `https://provider.dev.br/login?uid=${itx.uid}${loginHint}`;
+          url.pathname = '/login';
+          if (itx.params.login_hint) url.searchParams.set('login_hint', itx.params.login_hint);
+          break;
         }
 
         case 'consent':
-          return `https://provider.dev.br/consent?uid=${itx.uid}`;
+          url.pathname = '/consent';
+          url.searchParams.set('login_hint', itx.uid);
+          break;
 
         default:
-          return `https://provider.dev.br/${itx.prompt.name}`;
+          url.pathname = `/${itx.prompt.name}`;
+          break;
       }
+
+      return url.toString();
     },
+
+    policy: [
+      ...interactionPolicy.base(),
+      {
+        name: 'otp',
+        requestable: true,
+        details: (ctx) => {
+          const { oidc } = ctx;
+          console.log(oidc.session);
+          return {};
+        },
+        checks: [
+          {
+            reason: 'otp_prompt',
+            description: 'OTP prompt was not resolved',
+            error: 'interaction_required',
+            details: () => {},
+            check: (ctx) => {
+              try {
+                const requiredAmr = [];
+                // eslint-disable-next-line camelcase
+                const { oidc: { claims: { id_token } } } = ctx;
+
+                if (!id_token.acr || id_token.acr.values.length === 0) return false;
+                if (Array.isArray(id_token.acr.values) && !Array.isArray(id_token.amr)) {
+                  return true;
+                }
+
+                id_token.acr.values.forEach((acr) => {
+                  switch (acr) {
+                    case 'owners_device':
+                      requiredAmr.push('otp');
+                      break;
+
+                    default:
+                      break;
+                  }
+                });
+
+                return id_token.amr.values.filter((amr) => !requiredAmr.includes(amr)).length > 0;
+              } catch (error) {
+                console.error(error);
+                return false;
+              }
+            },
+          },
+          /*
+          {
+            reason: 'client_not_authorized',
+            description: 'client not authorized for End-User session yet',
+            error: 'interaction_required',
+            details: () => {},
+            check: (ctx) => {
+              const { oidc } = ctx;
+              // return oidc.prompts.has('consent') && !oidc.session.sidFor(oidc.client.clientId);
+              return false;
+            },
+          },
+          */
+        ],
+      },
+    ],
   },
 
   // Função para determinar se um token de atualização pode ser emitido
@@ -699,6 +782,7 @@ const configuration = {
 
       // Segurança
       // jwks_uri: '',
+      default_acr_values: [],
       id_token_signed_response_alg: 'RS256',
       userinfo_signed_response_alg: 'RS256',
 
@@ -824,24 +908,23 @@ oidc.use(async (ctx, next) => {
 });
 
 // Helmet
-// oidc.use(KoaHelmet.contentSecurityPolicy());
-// oidc.use(KoaHelmet.dnsPrefetchControl({
-//   allow: true,
-// }));
+oidc.use(KoaHelmet.contentSecurityPolicy());
+oidc.use(KoaHelmet.dnsPrefetchControl({
+  allow: true,
+}));
 // oidc.use(KoaHelmet.expectCt());
-// oidc.use(KoaHelmet.frameguard());
-// oidc.use(KoaHelmet.hidePoweredBy());
-// // oidc.use(KoaHelmet.hsts());
-// oidc.use(KoaHelmet.ieNoOpen());
-// oidc.use(KoaHelmet.noSniff());
-// oidc.use(KoaHelmet.permittedCrossDomainPolicies());
-// oidc.use(KoaHelmet.referrerPolicy());
-// oidc.use(KoaHelmet.xssFilter());
+oidc.use(KoaHelmet.frameguard());
+oidc.use(KoaHelmet.hidePoweredBy());
+// oidc.use(KoaHelmet.hsts());
+oidc.use(KoaHelmet.ieNoOpen());
+oidc.use(KoaHelmet.noSniff());
+oidc.use(KoaHelmet.permittedCrossDomainPolicies());
+oidc.use(KoaHelmet.referrerPolicy());
+oidc.use(KoaHelmet.xssFilter());
 
 oidc.on('introspection.error', handleClientAuthErrors);
 oidc.on('revocation.error', handleClientAuthErrors);
 oidc.on('authorization.error', handleClientAuthErrors);
-oidc.on('backchannel.error', handleClientAuthErrors);
 oidc.on('jwks.error', handleClientAuthErrors);
 oidc.on('check_session_origin.error', handleClientAuthErrors);
 oidc.on('check_session.error', handleClientAuthErrors);
@@ -852,6 +935,14 @@ oidc.on('registration_create.error', handleClientAuthErrors);
 oidc.on('registration_read.error', handleClientAuthErrors);
 oidc.on('server_error', handleClientAuthErrors);
 oidc.on('userinfo.error', handleClientAuthErrors);
+
+oidc.on('backchannel.error', (ctx, err, client, accountId, sid) => {
+  console.error(err);
+});
+
+oidc.on('backchannel.success', (ctx, client, accountId, sid) => {
+  console.info(`${accountId} is logged now`);
+});
 
 oidc.on('authorization.accepted', (ctx) => {
   const { client, params } = ctx.oidc;
@@ -867,7 +958,11 @@ oidc.on('interaction.started', (ctx, prompt) => {
 });
 
 oidc.on('interaction.saved', (interaction) => {
+  console.info('Interaction saved!');
+});
 
+oidc.on('interaction.destroyed', (interaction) => {
+  console.info('Interaction destroyed!');
 });
 
 function handleContextEvent(ctx) {
@@ -906,6 +1001,19 @@ oidc.on('refresh_token.saved', handleTokenOrCodeEvent.bind({ event: 'refresh_tok
 oidc.on('registration_access_token.destroyed', handleTokenOrCodeEvent.bind({ event: 'registration_access_token.destroyed' }));
 oidc.on('registration_access_token.saved', handleTokenOrCodeEvent.bind({ event: 'registration_access_token.saved' }));
 oidc.on('access_token.destroyed', handleTokenOrCodeEvent.bind({ event: 'access_token.destroyed' }));
+
+oidc.on('grant.revoked', (ctx, grantId) => {
+  console.info(`Grant ID ${grantId} was revoked!`);
+});
+
+function handleClientEvent(ctx, client) {
+  console.info(`Handle client ${client.client_id} event`);
+}
+
+oidc.on('pushed_authorization_request.success', handleClientEvent);
+oidc.on('registration_create.success', handleClientEvent);
+oidc.on('registration_delete.success', handleClientEvent);
+oidc.on('registration_update.success', handleClientEvent);
 
 // Configurar o Koa
 const app = new Koa();

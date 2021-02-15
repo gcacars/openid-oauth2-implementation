@@ -224,7 +224,7 @@ class UIController {
          * @type {import('oidc-provider').InteractionResults}
          */
         result = {
-          select_account: {}, // tenha certeza que isso será pulado pelas políticas de interação
+          // select_account: {}, // tenha certeza que isso será pulado pelas políticas de interação
           login: {
             // eslint-disable-next-line no-underscore-dangle
             account: account._id,

@@ -48,6 +48,11 @@
     <button type="button" class="btn" @click="authenticateOidcPopup" v-else>
       Entrar
     </button>
+    <button type="button" class="btn" @click="authenticateOidcPopup({
+        options: { acr_values: ['owners_device']}
+      })">
+      Entrar OTP
+    </button>
     <div class="position-absolute start-0 end-0 d-flex justify-content-center pe-none"
          v-if="alerta">
       <div class="alert alert-warning mt-5 shadow">{{ alerta }}</div>
