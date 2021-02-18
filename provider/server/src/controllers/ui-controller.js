@@ -69,9 +69,7 @@ class UIController {
             picture: account.picture_url,
           },
           country: 'BR',
-          password: true,
-          otp: false,
-          fido: false,
+          methods: account.authenticationMethods,
         };
       }
 

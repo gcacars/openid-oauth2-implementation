@@ -13,6 +13,7 @@ import Account from './src/app/Account';
 import lowdb from './src/data/lowdb';
 import jwks from './src/jwks.json';
 import Routes from './src/routes';
+import Otp from './src/app/Otp';
 
 // Gerar uma chave aleatória para proteger os JWTs
 const secureKeys = [
@@ -374,10 +375,20 @@ const configuration = {
           break;
         }
 
-        case 'consent':
+        case 'consent': {
           url.pathname = '/consent';
-          url.searchParams.set('login_hint', itx.uid);
+          url.searchParams.set('uid', itx.uid);
           break;
+        }
+
+        case 'otp': {
+          if (itx.prompt.reasons.includes('otp_not_configured')) {
+            url.pathname = itx.prompt.details.required ? '/otp-enroll' : '/mfa';
+          } else {
+            url.pathname = '/otp';
+          }
+          break;
+        }
 
         default:
           url.pathname = `/${itx.prompt.name}`;
@@ -392,9 +403,37 @@ const configuration = {
       {
         name: 'otp',
         requestable: true,
-        details: (ctx) => {
-          const { oidc } = ctx;
-          console.log(oidc.session);
+        details: async (ctx) => {
+          try {
+            const { oidc } = ctx;
+            const otpInstance = new Otp(lowdb);
+            const accountObj = await account.getAccountById(oidc.account.accountId);
+            const daysToRequired = 3 * 24 * 60 * 60 * 1000; // 3 dias
+            const required = Date.now() >= accountObj.created + daysToRequired;
+
+            if (!accountObj.authenticationMethods.otp) {
+              const uri = otpInstance.getAuthenticationUri(
+                accountObj.tenantId, oidc.account.accountId,
+              );
+
+              return {
+                tenantId: accountObj.tenantId,
+                required,
+                enrollment: true,
+                token: true,
+                uri,
+              };
+            }
+
+            return {
+              tenantId: accountObj.tenantId,
+              required,
+              enrollment: false,
+              token: true,
+            };
+          } catch (error) {
+            console.error(error);
+          }
           return {};
         },
         checks: [
@@ -432,19 +471,17 @@ const configuration = {
               }
             },
           },
-          /*
           {
-            reason: 'client_not_authorized',
+            reason: 'otp_not_configured',
             description: 'client not authorized for End-User session yet',
-            error: 'interaction_required',
+            error: 'otp_enrollment_required',
             details: () => {},
-            check: (ctx) => {
+            check: async (ctx) => {
               const { oidc } = ctx;
-              // return oidc.prompts.has('consent') && !oidc.session.sidFor(oidc.client.clientId);
-              return false;
+              const accountObj = await account.getAccountById(oidc.account.accountId);
+              return !accountObj.authenticationMethods.otp;
             },
           },
-          */
         ],
       },
     ],
@@ -880,12 +917,12 @@ function handleClientAuthErrors({ headers: { authorization }, oidc: { body, clie
   }
 }
 
-const oidc = new Provider('https://api.provider.dev.br', configuration);
+const provider = new Provider('https://api.provider.dev.br', configuration);
 
-oidc.keys = secureKeys;
-oidc.proxy = true;
+provider.keys = secureKeys;
+provider.proxy = true;
 
-oidc.use(async (ctx, next) => {
+provider.use(async (ctx, next) => {
   /** pre-processing
    * you may target a specific action here by matching `ctx.path`
    */
@@ -908,43 +945,43 @@ oidc.use(async (ctx, next) => {
 });
 
 // Helmet
-oidc.use(KoaHelmet.contentSecurityPolicy());
-oidc.use(KoaHelmet.dnsPrefetchControl({
+provider.use(KoaHelmet.contentSecurityPolicy());
+provider.use(KoaHelmet.dnsPrefetchControl({
   allow: true,
 }));
-// oidc.use(KoaHelmet.expectCt());
-oidc.use(KoaHelmet.frameguard());
-oidc.use(KoaHelmet.hidePoweredBy());
-// oidc.use(KoaHelmet.hsts());
-oidc.use(KoaHelmet.ieNoOpen());
-oidc.use(KoaHelmet.noSniff());
-oidc.use(KoaHelmet.permittedCrossDomainPolicies());
-oidc.use(KoaHelmet.referrerPolicy());
-oidc.use(KoaHelmet.xssFilter());
+// provider.use(KoaHelmet.expectCt());
+provider.use(KoaHelmet.frameguard());
+provider.use(KoaHelmet.hidePoweredBy());
+// provider.use(KoaHelmet.hsts());
+provider.use(KoaHelmet.ieNoOpen());
+provider.use(KoaHelmet.noSniff());
+provider.use(KoaHelmet.permittedCrossDomainPolicies());
+provider.use(KoaHelmet.referrerPolicy());
+provider.use(KoaHelmet.xssFilter());
 
-oidc.on('introspection.error', handleClientAuthErrors);
-oidc.on('revocation.error', handleClientAuthErrors);
-oidc.on('authorization.error', handleClientAuthErrors);
-oidc.on('jwks.error', handleClientAuthErrors);
-oidc.on('check_session_origin.error', handleClientAuthErrors);
-oidc.on('check_session.error', handleClientAuthErrors);
-oidc.on('discovery.error', handleClientAuthErrors);
-oidc.on('end_session.error', handleClientAuthErrors);
-oidc.on('grant.error', handleClientAuthErrors);
-oidc.on('registration_create.error', handleClientAuthErrors);
-oidc.on('registration_read.error', handleClientAuthErrors);
-oidc.on('server_error', handleClientAuthErrors);
-oidc.on('userinfo.error', handleClientAuthErrors);
+provider.on('introspection.error', handleClientAuthErrors);
+provider.on('revocation.error', handleClientAuthErrors);
+provider.on('authorization.error', handleClientAuthErrors);
+provider.on('jwks.error', handleClientAuthErrors);
+provider.on('check_session_origin.error', handleClientAuthErrors);
+provider.on('check_session.error', handleClientAuthErrors);
+provider.on('discovery.error', handleClientAuthErrors);
+provider.on('end_session.error', handleClientAuthErrors);
+provider.on('grant.error', handleClientAuthErrors);
+provider.on('registration_create.error', handleClientAuthErrors);
+provider.on('registration_read.error', handleClientAuthErrors);
+provider.on('server_error', handleClientAuthErrors);
+provider.on('userinfo.error', handleClientAuthErrors);
 
-oidc.on('backchannel.error', (ctx, err, client, accountId, sid) => {
+provider.on('backchannel.error', (ctx, err, client, accountId, sid) => {
   console.error(err);
 });
 
-oidc.on('backchannel.success', (ctx, client, accountId, sid) => {
+provider.on('backchannel.success', (ctx, client, accountId, sid) => {
   console.info(`${accountId} is logged now`);
 });
 
-oidc.on('authorization.accepted', (ctx) => {
+provider.on('authorization.accepted', (ctx) => {
   const { client, params } = ctx.oidc;
 
   if (client.applicationType === 'web' && client.web_app_type === 'spa'
@@ -953,15 +990,15 @@ oidc.on('authorization.accepted', (ctx) => {
   }
 });
 
-oidc.on('interaction.started', (ctx, prompt) => {
+provider.on('interaction.started', (ctx, prompt) => {
   const { client, params } = ctx.oidc;
 });
 
-oidc.on('interaction.saved', (interaction) => {
+provider.on('interaction.saved', (interaction) => {
   console.info('Interaction saved!');
 });
 
-oidc.on('interaction.destroyed', (interaction) => {
+provider.on('interaction.destroyed', (interaction) => {
   console.info('Interaction destroyed!');
 });
 
@@ -970,39 +1007,39 @@ function handleContextEvent(ctx) {
   const event = this.event;
 }
 
-oidc.on('authorization.success', handleContextEvent);
-oidc.on('end_session.success', handleContextEvent);
-oidc.on('grant.success', handleContextEvent);
-oidc.on('interaction.ended', handleContextEvent);
+provider.on('authorization.success', handleContextEvent);
+provider.on('end_session.success', handleContextEvent);
+provider.on('grant.success', handleContextEvent);
+provider.on('interaction.ended', handleContextEvent);
 
 function handleTokenOrCodeEvent(tokenCode) {
   const event = this.event;
 }
 
-oidc.on('access_token.destroyed', handleTokenOrCodeEvent.bind({ event: 'access_token.destroyed' }));
-oidc.on('access_token.saved', handleTokenOrCodeEvent.bind({ event: 'access_token.saved' }));
-oidc.on('authorization_code.consumed', handleTokenOrCodeEvent.bind({ event: 'authorization_code.consumed' }));
-oidc.on('authorization_code.destroyed', handleTokenOrCodeEvent.bind({ event: 'authorization_code.destroyed' }));
-oidc.on('authorization_code.saved', handleTokenOrCodeEvent.bind({ event: 'authorization_code.saved' }));
-oidc.on('client_credentials.destroyed', handleTokenOrCodeEvent.bind({ event: 'client_credentials.destroyed' }));
-oidc.on('client_credentials.saved', handleTokenOrCodeEvent.bind({ event: 'client_credentials.saved' }));
-oidc.on('device_code.consumed', handleTokenOrCodeEvent.bind({ event: 'device_code.consumed' }));
-oidc.on('device_code.destroyed', handleTokenOrCodeEvent.bind({ event: 'device_code.destroyed' }));
-oidc.on('device_code.saved', handleTokenOrCodeEvent.bind({ event: 'device_code.saved' }));
-oidc.on('initial_access_token.destroyed', handleTokenOrCodeEvent.bind({ event: 'initial_access_token.destroyed' }));
-oidc.on('initial_access_token.saved', handleTokenOrCodeEvent.bind({ event: 'initial_access_token.saved' }));
-oidc.on('replay_detection.destroyed', handleTokenOrCodeEvent.bind({ event: 'replay_detection.destroyed' }));
-oidc.on('replay_detection.saved', handleTokenOrCodeEvent.bind({ event: 'replay_detection.saved' }));
-oidc.on('pushed_authorization_request.destroyed', handleTokenOrCodeEvent.bind({ event: 'pushed_authorization_request.destroyed' }));
-oidc.on('pushed_authorization_request.saved', handleTokenOrCodeEvent.bind({ event: 'pushed_authorization_request.saved' }));
-oidc.on('refresh_token.consumed', handleTokenOrCodeEvent.bind({ event: 'refresh_token.consumed' }));
-oidc.on('refresh_token.destroyed', handleTokenOrCodeEvent.bind({ event: 'refresh_token.destroyed' }));
-oidc.on('refresh_token.saved', handleTokenOrCodeEvent.bind({ event: 'refresh_token.saved' }));
-oidc.on('registration_access_token.destroyed', handleTokenOrCodeEvent.bind({ event: 'registration_access_token.destroyed' }));
-oidc.on('registration_access_token.saved', handleTokenOrCodeEvent.bind({ event: 'registration_access_token.saved' }));
-oidc.on('access_token.destroyed', handleTokenOrCodeEvent.bind({ event: 'access_token.destroyed' }));
+provider.on('access_token.destroyed', handleTokenOrCodeEvent.bind({ event: 'access_token.destroyed' }));
+provider.on('access_token.saved', handleTokenOrCodeEvent.bind({ event: 'access_token.saved' }));
+provider.on('authorization_code.consumed', handleTokenOrCodeEvent.bind({ event: 'authorization_code.consumed' }));
+provider.on('authorization_code.destroyed', handleTokenOrCodeEvent.bind({ event: 'authorization_code.destroyed' }));
+provider.on('authorization_code.saved', handleTokenOrCodeEvent.bind({ event: 'authorization_code.saved' }));
+provider.on('client_credentials.destroyed', handleTokenOrCodeEvent.bind({ event: 'client_credentials.destroyed' }));
+provider.on('client_credentials.saved', handleTokenOrCodeEvent.bind({ event: 'client_credentials.saved' }));
+provider.on('device_code.consumed', handleTokenOrCodeEvent.bind({ event: 'device_code.consumed' }));
+provider.on('device_code.destroyed', handleTokenOrCodeEvent.bind({ event: 'device_code.destroyed' }));
+provider.on('device_code.saved', handleTokenOrCodeEvent.bind({ event: 'device_code.saved' }));
+provider.on('initial_access_token.destroyed', handleTokenOrCodeEvent.bind({ event: 'initial_access_token.destroyed' }));
+provider.on('initial_access_token.saved', handleTokenOrCodeEvent.bind({ event: 'initial_access_token.saved' }));
+provider.on('replay_detection.destroyed', handleTokenOrCodeEvent.bind({ event: 'replay_detection.destroyed' }));
+provider.on('replay_detection.saved', handleTokenOrCodeEvent.bind({ event: 'replay_detection.saved' }));
+provider.on('pushed_authorization_request.destroyed', handleTokenOrCodeEvent.bind({ event: 'pushed_authorization_request.destroyed' }));
+provider.on('pushed_authorization_request.saved', handleTokenOrCodeEvent.bind({ event: 'pushed_authorization_request.saved' }));
+provider.on('refresh_token.consumed', handleTokenOrCodeEvent.bind({ event: 'refresh_token.consumed' }));
+provider.on('refresh_token.destroyed', handleTokenOrCodeEvent.bind({ event: 'refresh_token.destroyed' }));
+provider.on('refresh_token.saved', handleTokenOrCodeEvent.bind({ event: 'refresh_token.saved' }));
+provider.on('registration_access_token.destroyed', handleTokenOrCodeEvent.bind({ event: 'registration_access_token.destroyed' }));
+provider.on('registration_access_token.saved', handleTokenOrCodeEvent.bind({ event: 'registration_access_token.saved' }));
+provider.on('access_token.destroyed', handleTokenOrCodeEvent.bind({ event: 'access_token.destroyed' }));
 
-oidc.on('grant.revoked', (ctx, grantId) => {
+provider.on('grant.revoked', (ctx, grantId) => {
   console.info(`Grant ID ${grantId} was revoked!`);
 });
 
@@ -1010,10 +1047,10 @@ function handleClientEvent(ctx, client) {
   console.info(`Handle client ${client.client_id} event`);
 }
 
-oidc.on('pushed_authorization_request.success', handleClientEvent);
-oidc.on('registration_create.success', handleClientEvent);
-oidc.on('registration_delete.success', handleClientEvent);
-oidc.on('registration_update.success', handleClientEvent);
+provider.on('pushed_authorization_request.success', handleClientEvent);
+provider.on('registration_create.success', handleClientEvent);
+provider.on('registration_delete.success', handleClientEvent);
+provider.on('registration_update.success', handleClientEvent);
 
 // Configurar o Koa
 const app = new Koa();
@@ -1046,8 +1083,8 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // eslint-disable-next-line no-new
-new Routes(app, oidc, lowdb);
-app.use(KoaMount(oidc.app));
+new Routes(app, provider, lowdb);
+app.use(KoaMount(provider.app));
 
 // Iniciar servidor
 const server = app.listen(3000, () => {

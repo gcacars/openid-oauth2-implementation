@@ -35,7 +35,9 @@
     "koa-router": "^10.0.0",
     "lowdb": "^1.0.0",
     "nanoid": "^3.1.20",
-    "oidc-provider": "^6.29.9"
+    "oidc-provider": "^6.29.9",
+    "otpauth": "^6.2.2",
+    "qrcode": "^1.4.4"
   },
   "devDependencies": {
     "@types/koa": "^2.11.6",

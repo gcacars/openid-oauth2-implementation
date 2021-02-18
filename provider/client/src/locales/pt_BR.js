@@ -23,6 +23,20 @@ const loc = {
     keepConnected: 'Mantenha-me conectado',
     loginBtn: 'Entrar',
   },
+  otp: {
+    inputFormTitle: 'Verificação em duas etapas',
+    codeInputLabel: 'Digite o código gerado pelo aplicativo de autenticação no seu dispositivo móvel:',
+    wrongCode: 'Este código parece inválido ou já expirou. Tente novamente.',
+    error: 'Não foi possível validar o código, cheque sua conexão e tente novamente.',
+    enrollment: {
+      inputFormTitle: 'Cadastrar etapa de verificação',
+      actionInfo: 'Use seu aplicativo autenticador preferido e escaneie o código QR para adicionar esta conta.',
+      codeInputLabel: 'Digite o código de 6 números gerado pelo aplicativo no seu dispositivo',
+      optionsShow: 'Veja',
+      optionsHide: 'Ocultar',
+      seeAppOptions: 'opções de aplicativos',
+    },
+  },
   device: {
     inputFormTitle: 'Conectar dispositivo',
     codeInputLabel: 'Digite o código informado pelo dispositivo',

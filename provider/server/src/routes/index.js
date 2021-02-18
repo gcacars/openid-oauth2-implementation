@@ -1,5 +1,6 @@
 import KoaBodyParser from 'koa-body';
 import DeviceRouter from './device-route';
+import OtpRouter from './otp-route';
 import UIRouter from './ui-route';
 
 // Variáveis privadas
@@ -32,6 +33,11 @@ class Routes {
     const device = DeviceRouter(provider, db);
     app.use(device.routes());
     app.use(device.allowedMethods());
+
+    // OTP
+    const otp = OtpRouter(provider, db, bodyParser);
+    app.use(otp.routes());
+    app.use(otp.allowedMethods());
   }
 
   configureUserInterface(db) {

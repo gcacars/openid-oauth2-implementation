@@ -13,6 +13,12 @@ try {
         email_verified: true,
         picture_url: 'https://randomuser.me/api/portraits/women/57.jpg',
         tenantId: 1,
+        authenticationMethods: {
+          password: false,
+          otp: false,
+          fido: false,
+        },
+        created: Date.now(),
       },
       {
         _id: 'c2ac2b4a-2262-4e2f-847a-a40dd3c4dcd5',
@@ -21,6 +27,12 @@ try {
         email_verified: false,
         picture_url: 'https://randomuser.me/api/portraits/men/40.jpg',
         tenantId: 2,
+        authenticationMethods: {
+          password: true,
+          otp: false,
+          fido: false,
+        },
+        created: Date.now(),
       },
       {
         _id: 'e3fc2b4a-2262-4e2f-847a-a40dd3ca1s13',
@@ -29,6 +41,12 @@ try {
         email_verified: false,
         picture_url: 'https://randomuser.me/api/portraits/men/15.jpg',
         tenantId: 0,
+        authenticationMethods: {
+          password: true,
+          otp: false,
+          fido: false,
+        },
+        created: Date.now(),
       },
     ],
 
@@ -58,6 +76,17 @@ try {
         desc: `Sua data de nascimento, nome completo, gênero, foto, perfil e
         outras informações, estejam disponíveis para aplicação.`,
         grantable: true,
+      },
+    ],
+
+    config: [
+      {
+        _id: 'otp',
+        issuer: 'oidc-implementation.dev',
+        label: 'OIDC Implementation Example',
+        algorithm: 'SHA1',
+        digits: 6,
+        period: 30,
       },
     ],
   }).write();

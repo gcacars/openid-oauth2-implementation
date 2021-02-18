@@ -45,6 +45,7 @@ function makeHttpContext(controller) {
           },
         };
       } else if (ctx.status === 302 && ctx.headers.accept === 'application/json') {
+        // Redirecionamentos
         ctx.status = 202;
         ctx.body = {
           ok: true,
@@ -53,7 +54,14 @@ function makeHttpContext(controller) {
           },
         };
         ctx.response.headers.location = undefined;
+      } else if ('error' in result) {
+        // Erros
+        ctx.body = {
+          ok: false,
+          ...result,
+        };
       } else {
+        // Normal
         ctx.body = {
           ok: true,
           data: result,

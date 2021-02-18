@@ -38,6 +38,24 @@ const routes = [
         },
       },
       {
+        path: '/otp',
+        name: 'OTP',
+        component: () => import(/* webpackChunkName: "adicionais" */ '../components/OTPVerify.vue'),
+      },
+      {
+        path: '/otp-enroll',
+        name: 'OTPEnrollment',
+        component: () => import(/* webpackChunkName: "adicionais" */ '../components/OTPEnrollment.vue'),
+        meta: {
+          cardAdditionalClasses: ['col-xl-5'],
+        },
+      },
+      {
+        path: '/mfa',
+        name: 'MFA',
+        component: () => import(/* webpackChunkName: "adicionais" */ '../components/OTPEnrollment.vue'),
+      },
+      {
         path: '/device',
         name: 'Device',
         component: () => import(/* webpackChunkName: "adicionais" */ '../components/DeviceInputCode.vue'),

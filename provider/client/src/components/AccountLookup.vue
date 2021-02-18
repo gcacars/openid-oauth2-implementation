@@ -84,7 +84,7 @@ export default {
 
         if (!Resource.handleRedirect(json, this.$router)) {
           // Decidir qual o próximo fluxo
-          if (json.data.password) {
+          if (json.data.methods.password) {
             this.$router.push({ name: 'Password' });
           }
         }
