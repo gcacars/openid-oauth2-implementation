@@ -46,7 +46,7 @@ class OtpController {
         ctx.originalRequest, ctx.originalResponse,
       );
 
-      const { prompt, session } = itx;
+      const { prompt, session, lastSubmission } = itx;
 
       if (prompt.name !== 'otp') {
         return {
@@ -80,17 +80,29 @@ class OtpController {
         instance.setEnrollment(session.accountId, true);
       }
 
+      const result = {
+        ...lastSubmission,
+        otp: {
+          validToken: true,
+          amr: 'otp',
+        },
+      };
+
+      if ('login' in lastSubmission) {
+        let { amr } = result.login;
+        if (!Array.isArray(amr)) amr = [];
+
+        // Alterar o resultado do login
+        result.login.acr = 'owners_device';
+        if (!amr.includes('otp')) amr.push('otp');
+
+        // Acrescentar que é um MFA
+        if (amr.length > 1 && !amr.includes('mfa')) amr.push('mfa');
+      }
+
       const redirectTo = await provider.interactionResult(
-        ctx.originalRequest, ctx.originalResponse, {
-          otp: {
-            validToken: true,
-          },
-          login: {
-            amr: ['mfa', 'otp'],
-            acr: 'owners_device',
-          },
-        }, {
-          mergeWithLastSubmission: true,
+        ctx.originalRequest, ctx.originalResponse, result, {
+          mergeWithLastSubmission: false,
         },
       );
 

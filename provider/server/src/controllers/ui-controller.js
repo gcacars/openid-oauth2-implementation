@@ -227,6 +227,7 @@ class UIController {
             // eslint-disable-next-line no-underscore-dangle
             account: account._id,
             acr: '',
+            amr: ['pwd'],
             remember: ctx.request.body.remember === '1',
             ts: Date.now(),
           },

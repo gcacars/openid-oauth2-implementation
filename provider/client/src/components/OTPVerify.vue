@@ -61,7 +61,9 @@ export default {
         }
 
         // Redirecionar
-        Resource.handleRedirect(json, this.$router);
+        if (!Resource.handleRedirect(json, this.$router)) {
+          window.location.href = json.redirect.location;
+        }
       } catch (error) {
         this.$store.dispatch('addToast', {
           title: this.$t('errors.unknownError'),

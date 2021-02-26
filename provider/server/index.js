@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 /* eslint-disable no-param-reassign */
 import crypto from 'crypto';
 import Koa from 'koa';
@@ -45,14 +46,21 @@ const configuration = {
   // Contas
   findAccount: account.findAccount.bind(account),
 
-  // Vamos informar as claims suportadas para cada escopo
+  // Configuração das Claims
   claims: {
+    // Claims suportadas para cada escopo
     openid: ['sub', 'given_name', 'picture'],
     address: ['address'],
     email: ['email', 'email_verified'],
     phone: ['phone_number', 'phone_number_verified'],
     profile: ['birthdate', 'family_name', 'gender', 'given_name', 'locale', 'middle_name', 'name',
       'nickname', 'picture', 'preferred_username', 'profile', 'updated_at', 'website', 'zoneinfo'],
+    // Claims que devem estar disponíveis para o cliente (RP)
+    acr: null,
+    amr: null,
+    auth_time: null,
+    iss: null,
+    sid: null,
   },
 
   // Escopos dinâmicos (regex)
@@ -285,7 +293,9 @@ const configuration = {
   expiresWithSession: async (ctx, token) => !token.scopes.has('offline_access'),
 
   // Define claims adicionais para serem retornadas quando um novo token de acesso é gerado
-  extraAccessTokenClaims: (ctx, token) => ({ tenantId: nanoid() }),
+  extraAccessTokenClaims(ctx, token) {
+    return { tenantId: nanoid() };
+  },
 
   // Metadados adicionais que um cliente pode ter
   extraClientMetadata: {
@@ -432,9 +442,11 @@ const configuration = {
               token: true,
             };
           } catch (error) {
-            console.error(error);
+            return {
+              error: 'unknown_error',
+              error_description: error.message,
+            };
           }
-          return {};
         },
         checks: [
           {
@@ -444,27 +456,16 @@ const configuration = {
             details: () => {},
             check: (ctx) => {
               try {
-                const requiredAmr = [];
-                // eslint-disable-next-line camelcase
-                const { oidc: { claims: { id_token } } } = ctx;
+                const { oidc: { claims: { id_token }, result } } = ctx;
+                const { acr } = id_token;
 
-                if (!id_token.acr || id_token.acr.values.length === 0) return false;
-                if (Array.isArray(id_token.acr.values) && !Array.isArray(id_token.amr)) {
+                if (Array.isArray(acr.values) && acr.values.includes('owners_device') && !('otp' in result)) {
                   return true;
                 }
 
-                id_token.acr.values.forEach((acr) => {
-                  switch (acr) {
-                    case 'owners_device':
-                      requiredAmr.push('otp');
-                      break;
+                if (!result.otp.validToken) return true;
 
-                    default:
-                      break;
-                  }
-                });
-
-                return id_token.amr.values.filter((amr) => !requiredAmr.includes(amr)).length > 0;
+                return false;
               } catch (error) {
                 console.error(error);
                 return false;
@@ -477,8 +478,10 @@ const configuration = {
             error: 'otp_enrollment_required',
             details: () => {},
             check: async (ctx) => {
-              const { oidc } = ctx;
-              const accountObj = await account.getAccountById(oidc.account.accountId);
+              const { oidc: { claims: { id_token }, account: { accountId }, result } } = ctx;
+              if ('otp' in result || !Array.isArray(id_token.acr) || id_token.acr.values.length === 0) return false;
+
+              const accountObj = await account.getAccountById(accountId);
               return !accountObj.authenticationMethods.otp;
             },
           },

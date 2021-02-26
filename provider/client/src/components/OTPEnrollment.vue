@@ -160,16 +160,10 @@ export default {
           return;
         }
 
-        // Salvar no estado da aplicação
-        // this.$store.dispatch('interaction/setDeviceResponse', json.data);
-
-        // Redirecionar
-        Resource.handleRedirect(json, this.$router);
-        /*
+        // Quando sucesso, recebemos um redirecionamento
         if (!Resource.handleRedirect(json, this.$router)) {
-          this.$router.push({ name: 'ConfirmDevice', params: { code: json.data.otpCode } });
+          window.location.href = json.redirect.location;
         }
-        */
       } catch (error) {
         this.$store.dispatch('addToast', {
           title: this.$t('errors.unknownError'),
