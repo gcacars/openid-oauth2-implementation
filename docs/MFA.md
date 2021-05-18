@@ -24,5 +24,7 @@ A **Microsoft** diz que o MFA diminui em 99% o risco do usuário ser comprometid
 
 O OTP (Senha de uso único) ...
 
+## Valores de AMR [(RFC8176)](https://tools.ietf.org/html/rfc8176)
+
 [1]: https://ldapwiki.com/wiki/Authentication%20Factor
 [2]: https://ldapwiki.com/wiki/Multi-Factor%20Authentication
