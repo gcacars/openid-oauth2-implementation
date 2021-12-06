@@ -42,7 +42,7 @@ Ambas não são inclusivas, e nos fluxos padrões do OAuth, naquele momento elas
 
 ## Requisição de troca de token
 
-O cliente pode trocar um token fazendo uma requisição normal para o ponto de acesso "Token",conforme os fluxos normais do OAuth 2.
+O cliente pode trocar um token fazendo uma requisição normal para o ponto de acesso "Token", conforme os fluxos normais do OAuth 2.
 
 > Note que de alguma forma o cliente deve ser autenticado ao fazer a requisição, como usando uma credencial de cliente ([RFC7523](https://datatracker.ietf.org/doc/html/rfc7523)), caso contrário qualquer recurso poderá se passar por alguém trocando um token.
 
@@ -54,7 +54,7 @@ Para essa requisição são usados os parâmetros abaixo em `application/x-www-f
 |`subject_token`|O token que identifica o sujeito em nome do qual a requisição está sendo solicitada. Normalmente o sujeito aqui informado, será o sujeito do token retornado.|Sim|Token|
 |`subject_token_type`|Identifica o tipo do token informado em `subject_token`.|Sim|[Tipo de token](#identificadores-de-tipo-de-token)|
 |`actor_token`|O token que representa o terceiro que será autorizado a agir em nome do sujeito.|Opcional|Token|
-|`actor_token_type`|Identifica o tipo do token informado em `subject_token`.|Sim se `actor_token` for informado.|[Tipo de token](#identificadores-de-tipo-de-token)|
+|`actor_token_type`|Identifica o tipo do token informado em `actor_token`.|Sim se `actor_token` for informado.|[Tipo de token](#identificadores-de-tipo-de-token)|
 |`resource`|Uma URI absoluta do recurso de destino, conforme descrito na [RFC8707](https://datatracker.ietf.org/doc/html/rfc8707).|Opcional|URI|
 |`audience`|Um nome lógico do serviço alvo. É similar com o parâmetro `resource`, porém usando um nome conhecido entre o cliente o servidor de autorização.<br>Pode ser um `iss` (OIDC), um identificador SAML (OASIS) ou o identificador do cliente (OAuth).<br>Pode ser usado junto com o parâmetro `resource`.|Opcional|Lista ou texto|
 |`scope`|O escopo desejado do token de segurança no contexto do recurso alvo.|Opcional|Texto delimitado por espaços.|
@@ -84,7 +84,7 @@ grant_type=urn:ietf:params:oauth:grant-type:token-exchange
 &subject_token_type=urn:ietf:params:oauth:token-type:access_token
 ```
 
-> Note que o exemplo teve quebras de linhas adicionais e não está codificado corretamente, afim de facilitar a leitura.
+> Note que os exemplos tem quebras de linhas adicionais e não estão codificados corretamente, afim de facilitar a leitura.
 
 ### Sobre recursos, públicos e escopos
 
@@ -299,6 +299,7 @@ Aqui o token indica que deverá ser utilizado em `urn:example:cooperation-contex
 O Servidor de Autorização pode retornar alguns erros seguindo o padrão do OAuth 2:
 
 |Erro|Descrição|
+|---|---|
 |`invalid_request`|Quando a requisição não é válida ou ambos `subject_token` e `actor_token` não são válidos por algum motivo.|
 |`invalid_target`|Quando por algum motivo não pode ser emitido um token para o recurso ou público informados.|
 
@@ -351,11 +352,9 @@ O token abaixo ilustra um caso onde o serviço 77 trocou um token para chamar o 
   "exp":1443904100,
   "nbf":1443904000,
   "sub":"user@example.com",
-  "act":
-  {
+  "act": {
     "sub":"https://service16.example.com",
-    "act":
-    {
+    "act": {
       "sub":"https://service77.example.com"
     }
   }
