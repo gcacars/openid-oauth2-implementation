@@ -2,7 +2,7 @@ const config = {
   provider: {
     server: {
       port: 3000,
-      dns: 'https://api.provider.dev.br',
+      dns: 'https://op.provider.dev.br',
     },
     client: {
       port: 8080,
@@ -12,7 +12,7 @@ const config = {
   device: {
     server: {
       port: 9000,
-      dns: 'https://api.device.dev.br',
+      dns: 'https://be.device.dev.br',
     },
     client: {
       port: 9090,

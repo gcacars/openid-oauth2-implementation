@@ -23,6 +23,14 @@ const loc = {
     keepConnected: 'Mantenha-me conectado',
     loginBtn: 'Entrar',
   },
+  mfa: {
+    formTitle: 'Configurar fator de autenticação',
+    info: `Para aumentar a segurança da sua conta é necessário adicionar um outro método de autenticação além da senha.
+    Por favor, escolha uma das opções abaixo.`,
+    requiredAction: 'Esta ação é obrigatória para continuar.',
+    stepItOutLinkLabel: 'Pular por enquanto (você tem {} dias para configurar)',
+    readMoreLinkLabel: 'Saiba mais',
+  },
   otp: {
     inputFormTitle: 'Verificação em duas etapas',
     codeInputLabel: 'Digite o código gerado pelo aplicativo de autenticação no seu dispositivo móvel:',

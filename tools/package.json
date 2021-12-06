@@ -1,0 +1,15 @@
+{
+  "name": "tools",
+  "version": "1.0.0",
+  "description": "Utils and tools for the solution (OAuth 2.1 + OpenID implementation)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Gabriel Anderson <gcacars@gmail.com> (https://github.com/gcacars)",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@panva/jose": "^1.9.3",
+    "mri": "^1.1.6"
+  }
+}

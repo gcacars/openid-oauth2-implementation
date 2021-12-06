@@ -47,6 +47,26 @@
       "trace": true
     },
     {
+      "type": "node",
+      "request": "launch",
+      "name": "API",
+      "cwd": "${workspaceFolder}\\app\\server",
+      "runtimeExecutable": "nodemon",
+      "args": [
+        "--preserve-symlinks",
+        "-r",
+        "esm",
+        "index.js",
+        "--inspect"
+      ],
+      "outputCapture": "std",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "envFile": "${workspaceFolder}/.env",
+      "trace": true
+    },
+    {
       "type": "pwa-node",
       "request": "launch",
       "name": "Launch Program",

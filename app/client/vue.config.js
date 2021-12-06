@@ -3,7 +3,7 @@ module.exports = {
   devServer: {
     port: 7070,
     https: false,
-    public: 'https://apprp.dev.br',
+    public: 'https://app-rp.dev.br',
     disableHostCheck: true,
     clientLogLevel: 'warning',
   },

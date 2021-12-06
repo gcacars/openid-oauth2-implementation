@@ -45,14 +45,25 @@
         <li><a class="dropdown-item" href="#" @click.prevent="signOut">Sair</a></li>
       </ul>
     </div>
-    <button type="button" class="btn" @click="authenticateOidcPopup" v-else>
-      Entrar
-    </button>
-    <button type="button" class="btn" @click="authenticateOidcPopup({
-        options: { acr_values: ['owners_device']}
-      })">
-      Entrar OTP
-    </button>
+    <div class="btn-group" v-else>
+      <button type="button" class="btn btn-primary" @click="auth">Entrar</button>
+      <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split"
+              data-bs-toggle="dropdown" aria-expanded="false">
+        <span class="visually-hidden">Abrir opções</span>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end">
+        <li><a class="dropdown-item" href="#" @click.prevent="auth({
+          acr_values: ['owners_device'],
+          extraQueryParams: { login_hint: 'karina@exemplo.com.br' },
+        })">Obrigar uso de OTP</a></li>
+        <li><a class="dropdown-item" href="#" @click.prevent="auth({
+          resource: 'https://api.app-rp.dev.br',
+        })">Informar recurso</a></li>
+        <li><a class="dropdown-item" href="#" @click.prevent="auth({
+          resource: 'urn:nx:all',
+        })">Todos recursos</a></li>
+      </ul>
+    </div>
     <div class="position-absolute start-0 end-0 d-flex justify-content-center pe-none"
          v-if="alerta">
       <div class="alert alert-warning mt-5 shadow">{{ alerta }}</div>
@@ -61,6 +72,7 @@
 </template>
 
 <script>
+import { nanoid } from 'nanoid';
 import { mapGetters, mapActions } from 'vuex';
 import { BIconBell, BIconSearch, BIconList } from 'bootstrap-icons-vue';
 import AccountHorizontal from './AccountHorizontal.vue';
@@ -108,6 +120,20 @@ export default {
       'authenticateOidcPopup',
       'removeOidcUser',
     ]),
+    auth(params = {}) {
+      const options = {
+        ...params,
+        extraQueryParams: {
+          login_hint: 'manoel@exemplo.com.br',
+          ...params.extraQueryParams,
+          nonce: nanoid(),
+        },
+      };
+
+      this.authenticateOidcPopup({
+        options,
+      });
+    },
     alertar(msg) {
       // Emite um alerta que some depois
       this.alerta = msg;

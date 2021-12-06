@@ -53,7 +53,7 @@ const routes = [
       {
         path: '/mfa',
         name: 'MFA',
-        component: () => import(/* webpackChunkName: "adicionais" */ '../components/OTPEnrollment.vue'),
+        component: () => import(/* webpackChunkName: "adicionais" */ '../components/MFAEnforcement.vue'),
       },
       {
         path: '/device',

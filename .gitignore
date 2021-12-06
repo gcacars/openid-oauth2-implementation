@@ -3,6 +3,9 @@ jwks.json
 *.pem
 *.crt
 *.key
+*.csr
+*.pfx
+*.srl
 
 # Logs
 logs

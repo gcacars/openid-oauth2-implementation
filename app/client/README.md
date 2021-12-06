@@ -89,16 +89,16 @@ const configuration = {
     application_type: 'web', // Importante
     client_id: 'app',
     client_secret: 'bem-secreto',
-    client_uri: 'https://apprp.dev.br/',
+    client_uri: 'https://app-rp.dev.br/',
     redirect_uris: [
-      'https://apprp.dev.br/',
-      'https://apprp.dev.br/auth', // Importante - callback
-      'https://apprp.dev.br/authp', // Importante - callback do popup
-      'https://apprp.dev.br/s.html', // Importante - renovação silenciosa
-      'https://apprp.dev.br/logout',
+      'https://app-rp.dev.br/',
+      'https://app-rp.dev.br/auth', // Importante - callback
+      'https://app-rp.dev.br/authp', // Importante - callback do popup
+      'https://app-rp.dev.br/s.html', // Importante - renovação silenciosa
+      'https://app-rp.dev.br/logout',
     ],
     post_logout_redirect_uris: [
-      'https://apprp.dev.br/logout',
+      'https://app-rp.dev.br/logout',
     ],
     
     response_types: ['code'], // Importante
@@ -119,7 +119,7 @@ const configuration = {
 A configuração `token_endpoint_auth_method: 'none',` pode abrir uma brecha de segurança, visto que não é necessário se autenticar para trocar um `code`. Como a especificação do protocolo não tem ainda um valor para PKCE, então devemos checar toda requisição que for sem autenticação, se está fornecendo um desafio PKCE. Isto é feito verificando se o tipo do cliente é um SPA `web_app_type: 'spa'` e ouvindo os eventos do provedor:
 
 ```js
-const oidc = new Provider('https://api.provider.dev.br', configuration);
+const oidc = new Provider('https://op.provider.dev.br', configuration);
 
 // ...
 

@@ -26,6 +26,78 @@
       "isBackground": true
     },
     {
+      "label": "Stop NGINX",
+      "type": "shell",
+      "group": "none",
+      "command": "./nginx -s stop",
+      "windows": {
+        "options": {
+          "cwd": "E:\\Projetos\\nexso\\nginx-1.19.6"
+        }
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "runOptions": {
+        "instanceLimit": 1,
+      },
+      "isBackground": true
+    },
+    {
+      "label": "Reload NGINX",
+      "type": "shell",
+      "group": "none",
+      "command": "./nginx -s reload",
+      "windows": {
+        "options": {
+          "cwd": "E:\\Projetos\\nexso\\nginx-1.19.6"
+        }
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "runOptions": {
+        "instanceLimit": 1,
+      },
+      "isBackground": true
+    },
+    {
+      "label": "Test NGINX Configuration",
+      "type": "shell",
+      "group": "none",
+      "command": "./nginx -c conf/nginx.conf -t",
+      "windows": {
+        "options": {
+          "cwd": "E:\\Projetos\\nexso\\nginx-1.19.6"
+        }
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "runOptions": {
+        "instanceLimit": 1,
+      },
+      "isBackground": true
+    },
+    {
       "type": "npm",
       "script": "serve",
       "path": "provider/client/",
@@ -109,6 +181,28 @@
       // "dependsOn": ["Servidor de autorização"],
       "runOptions": {
         "instanceLimit": 2,
+      },
+      "isBackground": false
+    },
+    {
+      "type": "npm",
+      "script": "start",
+      "path": "app/server/",
+      "problemMatcher": [],
+      "label": "API (Exemplo)",
+      "detail": "npm start",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new",
+        "showReuseMessage": false,
+        "clear": true,
+        "group": "dev"
+      },
+      // "dependsOn": ["Servidor de autorização"],
+      "runOptions": {
+        "instanceLimit": 1,
       },
       "isBackground": false
     },

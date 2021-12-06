@@ -30,25 +30,28 @@ Estudos sobre a criação de um servidor de autenticação usando OpenID Connect
 3. Gerar todos os certificados para os domínios com SSL.
 
     ```console
-    ./nginx/ssl/GerarCertificados.ps1
+    ./nginx/ssl/GerarCertificados.ps1 #Windows (sem suporte ao mTLS)
+    ./nginx/ssl/GerarCertificados.sh #Linux ou WSL (Windows)
     ```
 
 4. Isso irá gerar vários certificados na pasta `ssl`. Copie esta pasta e o arquivo de configuração `nginx.conf` para a pasta `/conf` da instalação do nginx.
 
-5. Altere o arquivo de hosts da sua máquina. (Windows `C:\System32\drivers\etc\hosts`) e adicione o conteúdo:
+5. Altere o arquivo de hosts da sua máquina. (Windows: `C:\System32\drivers\etc\hosts`) e adicione o conteúdo:
 
     ```hosts
-    127.0.0.1 provider.dev.br
-    127.0.0.1 api.provider.dev.br
-    127.0.0.1 apprp.dev.br
-    127.0.0.1 api.apprp.dev.br
-    127.0.0.1 admin-op.dev.br
-    127.0.0.1 api.admin-op.dev.br
-    127.0.0.1 account-admin.dev.br
-    127.0.0.1 api.account-admin.dev.br
-    127.0.0.1 device.dev.br
-    127.0.0.1 api.device.dev.br
+    127.0.0.5     provider.dev.br
+    127.0.0.6     op.provider.dev.br
+    127.0.0.10    app-rp.dev.br
+    127.0.0.11    api.app-rp.dev.br
+    127.0.0.15    admin-op.dev.br
+    127.0.0.16    api.admin-op.dev.br
+    127.0.0.20    account-admin.dev.br
+    127.0.0.21    api.account-admin.dev.br
+    127.0.0.25    device.dev.br
+    127.0.0.26    be.device.dev.br
     ```
+  
+    > Cada DNS precisa de um IP diferente na zona de loopback, para que a troca de certificados funcione. Caso contrário o `nginx` iria sempre oferecer o primeiro certificado. [Saiba mais]()
 
 6. Executar o nginx: `./nginx.exe`.
 

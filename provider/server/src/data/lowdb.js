@@ -14,7 +14,7 @@ try {
         picture_url: 'https://randomuser.me/api/portraits/women/57.jpg',
         tenantId: 1,
         authenticationMethods: {
-          password: false,
+          password: true,
           otp: false,
           fido: false,
         },

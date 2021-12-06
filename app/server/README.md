@@ -1,19 +1,21 @@
-# Aplicação Exemplo
+# API de Exemplo
 
-## Configurar ambiente
+Este é um exemplo de API que consome um _access token_ JWT e valida-o.
+Além disso a API se autentica como um cliente do provedor OpenID enviando um certificado de cliente, usando a autenticação mútua de TLS.
 
-### HTTPS
+## Tecnologias e pacotes
 
-Execute os comandos abaixo para gerar um certificado:
+Para desenvolvimento foi utilizado:
 
-```command
-openssl genrsa -out key.pem
-openssl req -new -key key.pem -out csr.pem
-openssl x509 -req -days 9999 -in csr.pem -signkey key.pem -out cert.pem
-rm csr.pem
-```
+* Node 14.15.0
+* [OpenID Client 4.2](https://www.npmjs.com/package/openid-client)
+* [Koa.js](https://koajs.com/)
+  * [Koa-Router](https://github.com/koajs/router)
+  * [Koa-Cors](https://github.com/koajs/cors)
 
-Para gerar a chave pública:
-```command
- openssl x509 -in cert.pem -pubkey -noout
+### Gerar token com certificado
+
+```js
+if (ctx.oidc.client.tlsClientCertificateBoundAccessTokens) {
+    cert = getCertificate(ctx);
 ```

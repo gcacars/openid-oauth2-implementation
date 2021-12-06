@@ -40,7 +40,7 @@
         </li>
         <li>
           <a class="dropdown-item d-flex justify-content-between align-items-center" 
-             href="https://apprp.dev.br/" target="_blank">
+             href="https://app-rp.dev.br/" target="_blank">
             Aplicação exemplo
             <b-icon-box-arrow-up-right class="ms-2" />
           </a>

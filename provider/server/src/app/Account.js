@@ -43,7 +43,7 @@ class Account {
    * @param {string} id O ID da conta para procurar
    * @returns {*}
    */
-  async findAccount(ctx, id) {
+  async findAccount(ctx, id, code) {
     try {
       // Isso deve ser algo que simplesmente verifica se a conta existe
       /**
@@ -51,6 +51,7 @@ class Account {
        */
       const db = dbClient.get(this);
       const account = db.get('users').find({ _id: id }).value();
+      const { oidc } = ctx;
 
       if (!account) {
         return undefined;
@@ -59,7 +60,14 @@ class Account {
       return {
         accountId: id,
         // e essas claims() deveria ser uma pesquisa para retornar as claims da conta
-        async claims() {
+        /**
+         * 
+         * @param {'id_token'|'userinfo'|'scope'} use 
+         * @param {string} scope 
+         * @param {object} claims 
+         * @param {string[]} rejected 
+         */
+        async claims(use, scope, claims, rejected) {
           return {
             sub: id,
             given_name: account.firstName,

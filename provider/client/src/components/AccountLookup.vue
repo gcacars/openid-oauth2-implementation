@@ -13,12 +13,12 @@
       <div class="mb-3">
         <small><a href="#">{{ $t('accountLookup.noRememberAccount') }}</a></small>
       </div>
-      <button type="submit" class="btn mt-3 btn-primary w-100" :disabled="enviando">
-        <span class="spinner-grow spinner-grow-sm mr-1" role="status"
-              aria-hidden="true" v-if="enviando"></span>
-        {{ $t('continueBtnLabel') }}
-      </button>
       <div class="text-center">
+        <button type="submit" class="btn mt-3 btn-primary w-50" :disabled="enviando">
+          <span class="spinner-grow spinner-grow-sm mr-1" role="status"
+                aria-hidden="true" v-if="enviando"></span>
+          {{ $t('continueBtnLabel') }}
+        </button>
         <hr class="my-3">
         <p class="mb-1">{{ $t('accountLookup.notHaveAccount') }}</p>
         <a href="#">{{ $t('accountLookup.createAccountLabel') }}</a>

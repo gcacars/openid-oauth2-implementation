@@ -8,7 +8,7 @@ import KoaMount from 'koa-mount';
 import { Provider, errors, interactionPolicy } from 'oidc-provider';
 import { nanoid } from 'nanoid';
 import base64url from 'base64url';
-// import { RedisAdapter } from './src/adapters/redis';
+import { RedisAdapter } from './src/adapters/redis';
 // import ConsoleAdapter from './src/adapters/console';
 import Account from './src/app/Account';
 import lowdb from './src/data/lowdb';
@@ -23,7 +23,7 @@ const secureKeys = [
 ];
 
 // CORS
-const allowedHosts = ['https://provider.dev.br', 'https://apprp.dev.br', 'https://admin-op.dev.br'];
+const allowedHosts = ['https://provider.dev.br', 'https://app-rp.dev.br', 'https://admin-op.dev.br'];
 
 // As execuções para calcular um hash pairwise devem ser rápidas.
 // Aqui mantemos um cache do que já foi feito.
@@ -40,7 +40,7 @@ const account = new Account(lowdb);
 const configuration = {
   // Armazenamento persistente
   // (usando uma instância grátis de dev na cloud: https://redislabs.com/try-free/)
-  // adapter: RedisAdapter,
+  adapter: RedisAdapter,
   // adapter: ConsoleAdapter,
 
   // Contas
@@ -55,7 +55,7 @@ const configuration = {
     phone: ['phone_number', 'phone_number_verified'],
     profile: ['birthdate', 'family_name', 'gender', 'given_name', 'locale', 'middle_name', 'name',
       'nickname', 'picture', 'preferred_username', 'profile', 'updated_at', 'website', 'zoneinfo'],
-    // Claims que devem estar disponíveis para o cliente (RP)
+    // Claims que podem estar disponíveis para o cliente (RP) quando features.claimsParameter é true
     acr: null,
     amr: null,
     auth_time: null,
@@ -167,19 +167,29 @@ const configuration = {
     sessionManagement: {
       enabled: true,
       keepHeaders: false,
-      scriptNonce: (ctx) => undefined,
+      scriptNonce: (ctx) => {
+        return undefined;
+      },
       ack: 'draft-30',
     },
     userinfo: { enabled: true },
     // Token
     claimsParameter: { enabled: true },
-    introspection: { enabled: false },
+    introspection: {
+      enabled: true,
+      async allowedPolicy(ctx, client, token) {
+        if (client.introspectionEndpointAuthMethod === 'none' && token.clientId !== ctx.oidc.client.clientId) {
+          return false;
+        }
+        return true;
+      },
+    },
     jwtIntrospection: { enabled: false },
     revocation: { enabled: true }, // Permite revogar um token dado
     // Segurança
     // dPoP: { enabled: true, iatTolerance: 60 },
     clientCredentials: { enabled: true },
-    encryption: { enabled: false },
+    encryption: { enabled: true },
     fapiRW: { enabled: false },
     jwtResponseModes: { enabled: false }, // JARM
     requestObjects: {
@@ -200,29 +210,91 @@ const configuration = {
       },
     },
     resourceIndicators: {
-      enabled: false,
+      enabled: true,
+      async allowedPolicy(ctx, resources, client) {
+        return resources.every((r) => client.allowed_resources.includes(r));
+      },
+      ack: 'draft-08',
     },
     mTLS: {
-      enabled: false,
-      certificateAuthorized: (ctx) => ctx.socket.authorized,
-      certificateBoundAccessTokens: false,
+      enabled: true,
+      certificateBoundAccessTokens: true,
+      certificateAuthorized(ctx) {
+        const isOk = ctx.get('x-ssl-client-verified') === 'SUCCESS';
+        return isOk;
+        // return ctx.socket.authorized;
+      },
       certificateSubjectMatches(ctx, property, expected) {
         switch (property) {
-          case 'tls_client_auth_subject_dn':
-            return ctx.get('x-ssl-client-s-dn') === expected;
+          case 'tls_client_auth_subject_dn': {
+            const clientDn = ctx.get('x-ssl-client-s-dn');
+
+            if (clientDn.includes('CN=')) {
+              const info = Object.fromEntries(clientDn.split(',').map((p) => p.split('=')));
+              return info.CN === expected;
+            }
+
+            return clientDn === expected;
+          }
+
           default:
             throw new Error(`${property} certificate subject matching not implemented`);
         }
       },
       getCertificate(ctx) {
+        const cert = ctx.get('x-ssl-client-certificate');
+        return cert;
+        /*
         const peerCertificate = ctx.socket.getPeerCertificate();
         if (peerCertificate.raw) {
           return `-----BEGIN CERTIFICATE-----\n${peerCertificate.raw.toString('base64')}\n-----END CERTIFICATE-----`;
         }
         return null;
+        */
       },
       selfSignedTlsClientAuth: false,
-      tlsClientAuth: false,
+      tlsClientAuth: true,
+    },
+    rpInitiatedLogout: {
+      enabled: false,
+      async logoutSource(ctx, form) {
+        // @param ctx - koa request context
+        // @param form - form source (id="op.logoutForm") to be embedded in the page and submitted by
+        //   the End-User
+        ctx.body = `<!DOCTYPE html>
+          <head>
+            <title>Logout Request</title>
+            <style>/* css and html classes omitted for brevity, see lib/helpers/defaults.js */</style>
+          </head>
+          <body>
+            <div>
+              <h1>Do you want to sign-out from ${ctx.host}?</h1>
+              ${form}
+              <button autofocus type="submit" form="op.logoutForm" value="yes" name="logout">Yes, sign me out</button>
+              <button type="submit" form="op.logoutForm">No, stay signed in</button>
+            </div>
+          </body>
+          </html>`;
+      },
+      async postLogoutSuccessSource(ctx) {
+        // @param ctx - koa request context
+        const {
+          clientId, clientName, clientUri, initiateLoginUri, logoUri, policyUri, tosUri,
+        } = ctx.oidc.client || {}; // client is defined if the user chose to stay logged in with the OP
+        const display = clientName || clientId;
+        ctx.body = `<!DOCTYPE html>
+          <head>
+            <title>Sign-out Success</title>
+            <style>/* css and html classes omitted for brevity, see lib/helpers/defaults.js */</style>
+          </head>
+          <body>
+            <div>
+              <h1>Sign-out Success</h1>
+              <p>Your sign-out ${display ? `with ${display}` : ''} was successful.</p>
+            </div>
+          </body>
+          </html>`;
+      },
     },
   },
 
@@ -230,6 +302,31 @@ const configuration = {
   acceptQueryParamAccessTokens: false, // Não aceitar tokens enviados nos parâmetros da URL
   acrValues: ['0'],
   audiences(ctx, sub, token, use) {
+    if (use === 'access_token') {
+      const { oidc: { route, client, params: { resource: resourceParam } } } = ctx;
+      let grantedResource;
+
+      if (route === 'token') {
+        const { oidc: { params: { grant_type } } } = ctx;
+
+        switch (grant_type) {
+          case 'authorization_code':
+            grantedResource = ctx.oidc.entities.AuthorizationCode.resource;
+            break;
+          case 'refresh_token':
+            grantedResource = ctx.oidc.entities.RefreshToken.resource;
+            break;
+          case 'urn:ietf:params:oauth:grant-type:device_code':
+            grantedResource = ctx.oidc.entities.DeviceCode.resource;
+            break;
+          default:
+        }
+      }
+      // => array of validated and transformed string audiences or undefined if no audiences
+      //    are to be listed
+      // return transform(resourceParam, grantedResource);
+      return grantedResource;
+    }
     // Configurar a audiência/público do token
     return undefined;
   },
@@ -243,7 +340,7 @@ const configuration = {
   clockTolerance: 30,
 
   // Não permitir que o ID Token contenha dados/claims do usuário.
-  conformIdTokenClaims: true,
+  conformIdTokenClaims: false,
 
   // Configurações de cookies
   // (demorei 12 horas para configurar, tenha certeza que sabe o que está fazendo!)
@@ -290,7 +387,9 @@ const configuration = {
 
   // Define se os tokens devem expirar junto com a sessão
   // ou seja, fechou o navegador terá que fazer login de novo
-  expiresWithSession: async (ctx, token) => !token.scopes.has('offline_access'),
+  expiresWithSession: async (ctx, token) => {
+    return !token.scopes.has('offline_access');
+  },
 
   // Define claims adicionais para serem retornadas quando um novo token de acesso é gerado
   extraAccessTokenClaims(ctx, token) {
@@ -300,13 +399,13 @@ const configuration = {
   // Metadados adicionais que um cliente pode ter
   extraClientMetadata: {
     // Lista de propriedades adicionais
-    properties: ['web_app_type', 'usoInterno', 'terceiro', 'tenantId', 'nx_type'],
+    properties: ['web_app_type', 'usoInterno', 'terceiro', 'tenantId', 'nx_type', 'allowed_resources'],
 
     // Validação das propriedades
     validator(chave, valor, metadado) {
       switch (chave) {
         case 'web_app_type':
-          if (valor && !['spa'].includes(valor)) {
+          if (valor && !['spa', 'api'].includes(valor)) {
             throw new Error('Tipo de aplicação Web inválido');
           }
           break;
@@ -340,7 +439,9 @@ const configuration = {
   // `paseto` - igual o opaque, porém com uma propriedade adicional `paseto`
   // paseto só permite uma única audiência
   formats: {
-    AccessToken: (ctx, token) => (token.aud ? 'jwt' : 'opaque'),
+    AccessToken: (ctx, token) => {
+      return (token.aud ? 'jwt' : 'opaque');
+    },
     ClientCredentials: 'opaque',
     // Funções para personalizar a estrutura de um token de acesso antes de assinar
     customizers: {
@@ -521,7 +622,7 @@ const configuration = {
   responseTypes: ['code', 'code id_token', 'id_token', 'code id_token token', 'none'],
 
   // Tipos de autenticação do cliente para poder revogar um token
-  revocationEndpointAuthMethods: ['client_secret_jwt', 'private_key_jwt'],
+  revocationEndpointAuthMethods: ['none', 'client_secret_jwt', 'private_key_jwt', 'tls_client_auth'],
 
   // Indica se deve fazer a rotação de um token de atualização ou não
   rotateRefreshToken(ctx) {
@@ -566,7 +667,10 @@ const configuration = {
   subjectTypes: ['pairwise', 'public'],
 
   // Modo de autenticação na requisição de token
-  tokenEndpointAuthMethods: ['client_secret_basic', 'client_secret_jwt', 'private_key_jwt', 'none'],
+  tokenEndpointAuthMethods: ['client_secret_basic', 'client_secret_jwt', 'private_key_jwt', 'none', 'tls_client_auth'],
+
+  // Metadados sobre um token
+  introspectionEndpointAuthMethods: ['none', 'client_secret_basic', 'tls_client_auth'],
 
   // Tempos de expiração para cada token
   ttl: {
@@ -778,6 +882,7 @@ const configuration = {
   clientDefaults: {
     grant_types: ['authorization_code'],
     revocation_endpoint_auth_method: 'client_secret_jwt',
+    introspection_endpoint_auth_method: 'tls_client_auth',
   },
 
   clients: [
@@ -785,28 +890,28 @@ const configuration = {
       // Apresentação
       client_name: 'Aplicação Exemplo',
       logo_uri: 'https://placeholder.com/wp-content/uploads/2018/10/placeholder.com-logo3.png',
-      policy_uri: 'https://apprp.dev.br/politica-privacidade',
-      tos_uri: 'https://apprp.dev.br/termos-servico',
+      policy_uri: 'https://app-rp.dev.br/politica-privacidade',
+      tos_uri: 'https://app-rp.dev.br/termos-servico',
 
       // Configurações do cliente
       application_type: 'web',
       client_id: 'app',
       client_secret: 'bem-secreto',
-      client_uri: 'https://apprp.dev.br/',
+      client_uri: 'https://app-rp.dev.br/',
       redirect_uris: [
-        'https://apprp.dev.br/',
-        'https://apprp.dev.br/cb',
-        'https://apprp.dev.br/auth',
-        'https://apprp.dev.br/authp',
-        'https://apprp.dev.br/s.html',
-        'https://apprp.dev.br/logout',
-        'https://apprp.dev.br/pre-tela',
+        'https://app-rp.dev.br/',
+        'https://app-rp.dev.br/cb',
+        'https://app-rp.dev.br/auth',
+        'https://app-rp.dev.br/authp',
+        'https://app-rp.dev.br/s.html',
+        'https://app-rp.dev.br/logout',
+        'https://app-rp.dev.br/pre-tela',
       ],
-      // initiate_login_uri: 'https://apprp.dev.br/pre-tela',
+      // initiate_login_uri: 'https://app-rp.dev.br/pre-tela',
       post_logout_redirect_uris: [
-        'https://apprp.dev.br/logout',
+        'https://app-rp.dev.br/logout',
       ],
-      sector_identifier_uri: 'https://apprp.dev.br/',
+      sector_identifier_uri: 'https://app-rp.dev.br/',
       subject_type: 'public',
 
       // Configurações do OpenID ou OAuth
@@ -814,7 +919,6 @@ const configuration = {
       grant_types: ['authorization_code', 'implicit'],
       scope: 'openid email phone profile',
       token_endpoint_auth_method: 'none',
-      revocation_endpoint_auth_method: 'client_secret_jwt',
 
       // Configurações do token
       default_max_age: 3600,
@@ -825,12 +929,71 @@ const configuration = {
       default_acr_values: [],
       id_token_signed_response_alg: 'RS256',
       userinfo_signed_response_alg: 'RS256',
+      allowed_resources: ['https://api.app-rp.dev.br'],
 
       // Administrativo
       contacts: ['admin-aplicativo@exemplo.com.br'],
       web_app_type: 'spa',
       nx_type: 'business',
       tenantId: 123,
+    },
+    {
+      // Apresentação
+      client_name: 'API Exemplo',
+      logo_uri: 'https://placeholder.com/wp-content/uploads/2018/10/placeholder.com-logo3.png',
+      policy_uri: 'https://api.app-rp.dev.br/politica-privacidade',
+      tos_uri: 'https://api.app-rp.dev.br/termos-servico',
+
+      // Configurações do cliente
+      application_type: 'web',
+      client_id: 'api',
+      client_secret: 'segredo-da-api',
+      client_uri: 'https://api.app-rp.dev.br/',
+      redirect_uris: [
+        'https://api.app-rp.dev.br/',
+        'https://api.app-rp.dev.br/auth',
+      ],
+      sector_identifier_uri: 'https://api.app-rp.dev.br/',
+      subject_type: 'public',
+
+      // Configurações do OpenID ou OAuth
+      response_types: ['code'],
+      grant_types: ['authorization_code', 'client_credentials'],
+      scope: 'email profile',
+      token_endpoint_auth_method: 'tls_client_auth',
+      introspection_endpoint_auth_method: 'tls_client_auth',
+
+      // Configurações do token
+      default_max_age: 3600,
+      require_auth_time: true,
+
+      // Segurança
+      // jwks_uri: '',
+      default_acr_values: [],
+      id_token_signed_response_alg: 'RS256',
+      userinfo_signed_response_alg: 'RS256',
+
+      // Administrativo
+      contacts: ['admin-aplicativo@exemplo.com.br'],
+      web_app_type: 'api',
+      nx_type: 'business',
+      tenantId: 123,
+
+      // mTLS
+      tls_client_auth_subject_dn: 'api.app-rp.dev.br',
+      tls_client_certificate_bound_access_tokens: true,
+      jwks: {
+        keys: [
+          {
+            kty: 'RSA',
+            e: 'AQAB',
+            n: 'yCLEkSYEfLcoVThjeY0EeDunVhCpk84oV5yv9mscpZtdbglDbUTyy8vg8WFy9l01Zy7RChYLe5ABMnqG1dwjerkdgsetHufBqQqxROFK3MCvJ6kZT3uGS54M3lopmCPzuir1crftryBna3MhcjbL6XT6Onx8eZ47kD6KG7SfLqG8Eo6rt-4X2zgU2SYA-dgFv4zZKdL8QMh_Bwlklitgk5l55O8Nrr76cvx8OlRbHGSBl3fyQ608-9EolmRIM_aj81QIZXru5mPJAZ7uYYtDIC4nNwFmlH5iInPjABnBMHw58iUdSHixaqXgVtdO1tDGFNVPIX6WE3121jOPiIlg9Q',
+            x5c: [
+              'MIID4DCCAsigAwIBAgIUCWbXsxcnuvSfii37/KfePjLtMtIwDQYJKoZIhvcNAQELBQAwgZgxGzAZBgNVBAMMElJvb3QgRGV2IEF1dGhvcml0eTEoMCYGA1UECgwfTG9jYWwgRGV2IENlcnRpZmljYXRlIEF1dGhvcml0eTELMAkGA1UEBhMCQlIxEjAQBgNVBAgMCVNhbyBQYXVsbzERMA8GA1UEBwwIQ2FtcGluYXMxGzAZBgkqhkiG9w0BCQEWDGNhQGNhLm5ldC5icjAeFw0yMTAzMTgxMTI4NDZaFw0yMjAzMDkxMTI4NDZaMGAxCzAJBgNVBAYTAkJSMRIwEAYDVQQIDAlTYW8gUGF1bG8xEjAQBgNVBAcMCVNhbyBQYXVsbzENMAsGA1UECgwETm9uZTEaMBgGA1UEAwwRYXBpLmFwcC1ycC5kZXYuYnIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDIIsSRJgR8tyhVOGN5jQR4O6dWEKmTzihXnK/2axylm11uCUNtRPLLy+DxYXL2XTVnLtEKFgt7kAEyeobV3CN6uR2Cx60e58GpCrFE4UrcwK8nqRlPe4ZLngzeWimYI/O6KvVyt+2vIGdrcyFyNsvpdPo6fHx5njuQPoobtJ8uobwSjqu37hfbOBTZJgD52AW/jNkp0vxAyH8HCWSWK2CTmXnk7w2uvvpy/Hw6VFscZIGXd/JDrTz70SiWZEgz9qPzVAhleu7mY8kBnu5hi0MgLic3AWaUfmIic+MAGcEwfDnyJR1IeLFqpeBW107W0MYU1U8hfpYTfXbWM4+IiWD1AgMBAAGjWTBXMB8GA1UdIwQYMBaAFAZBHzv8mtlJqJM5RiOBWjr2O2FkMAkGA1UdEwQCMAAwCwYDVR0PBAQDAgTwMBwGA1UdEQQVMBOCEWFwaS5hcHAtcnAuZGV2LmJyMA0GCSqGSIb3DQEBCwUAA4IBAQAttBg8ZQe+PrSiIprG3o6QEeOFDr2uL3mdIHybntMapLTsoHkPbbsL0mWqXQ6Pe2uMvp6Rzpbt2olZZ1eyZtsrNBauuQOZ1vbY5PStlhxBKm/yL+hqFf3CUSaacB2QDFpI6S4V/kZhJwjWGu42lNtUfZaxaiO34vwkx3yjMetfGDrCIQRVp0bwQM2ejf3roR1ZwV6b3UyeTKqyLTuT18g8vqEKjWxkyuBfpGP0bsKUv+F3aFy+r7HaCwsYhF2WzIUh1cZZZkN5CNhSwkQgyVTHDLDkNE3qEY2t5KGFEj+fznsI6C1Zz9GZcT6ucQsWCKlFP5xA9EvUB1m49Cf1l7BL'
+            ],
+          },
+        ],
+      },
     },
     {
       // Apresentação
@@ -865,8 +1028,6 @@ const configuration = {
       grant_types: ['authorization_code', 'implicit', 'refresh_token'],
       scope: 'openid email phone profile',
       token_endpoint_auth_method: 'none',
-      revocation_endpoint_auth_method: 'client_secret_jwt',
-      introspection_endpoint_auth_method: 'tls_client_auth',
 
       // Configurações do token
       default_max_age: 3600,
@@ -892,8 +1053,8 @@ const configuration = {
       client_id: 'device',
       client_secret: 'dispositivo',
       client_uri: 'https://device.dev.br/',
-      sector_identifier_uri: 'https://api.device.dev.br/',
-      redirect_uris: ['https://api.device.dev.br'],
+      sector_identifier_uri: 'https://be.device.dev.br/',
+      redirect_uris: ['https://be.device.dev.br'],
       subject_type: 'public',
 
       // Configurações do OpenID ou OAuth
@@ -903,8 +1064,6 @@ const configuration = {
       ],
       // scope: 'openid email phone profile',
       // token_endpoint_auth_method: 'none',
-      revocation_endpoint_auth_method: 'client_secret_jwt',
-      introspection_endpoint_auth_method: 'tls_client_auth',
     },
   ],
 };
@@ -920,7 +1079,7 @@ function handleClientAuthErrors({ headers: { authorization }, oidc: { body, clie
   }
 }
 
-const provider = new Provider('https://api.provider.dev.br', configuration);
+const provider = new Provider('https://op.provider.dev.br', configuration);
 
 provider.keys = secureKeys;
 provider.proxy = true;
@@ -1091,6 +1250,6 @@ app.use(KoaMount(provider.app));
 
 // Iniciar servidor
 const server = app.listen(3000, () => {
-  console.log('oidc-provider está pronto, verifique https://api.provider.dev.br/.well-known/openid-configuration');
-  console.log('Inicie o login em: https://apprp.dev.br/ com o manoel@exemplo.com.br');
+  console.log('oidc-provider está pronto, verifique https://op.provider.dev.br/.well-known/openid-configuration');
+  console.log('Inicie o login em: https://app-rp.dev.br/ com o manoel@exemplo.com.br');
 });

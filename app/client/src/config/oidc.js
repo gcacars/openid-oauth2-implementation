@@ -1,8 +1,8 @@
 const oidcSettings = {
-  authority: process.env.VUE_APP_PROVIDER_URL,
+  authority: process.env.VUE_APP_PROVIDER_URL, // 'http://localhost:3000' || 
   client_id: 'app',
   response_type: 'code',
-  scope: 'openid email profile',
+  scope: 'openid profile api:read api:write',
   ui_locales: ['pt-BR'],
   prompt: 'login',
 
@@ -11,15 +11,18 @@ const oidcSettings = {
   // post_logout_redirect_uri: `${process.env.VUE_APP_URL}/logout`,
   silentRedirectUri: `${process.env.VUE_APP_URL}/s.html`,
 
-  filterProtocolClaims: true, // remove: nbf, iss, at_hash, nonce
-  loadUserInfo: true,
+  max_age: 300,
   clockSkew: 60,
+  staleStateAge: 300,
+  checkSessionInterval: 2000,
   automaticSilentRenew: true,
-  automaticSilentSignin: false,
+  automaticSilentSignin: true,
+  filterProtocolClaims: false, // remove: nbf, iss, at_hash, nonce
+  includeIdTokenInSilentRenew: true,
+  loadUserInfo: true,
+  monitorSession: true,
   revokeAccessTokenOnSignout: true,
-  extraQueryParams: {
-    login_hint: 'manoel@exemplo.com.br',
-  },
+  extraQueryParams: {},
 };
 
 export default oidcSettings;
